@@ -254,7 +254,7 @@ void updateRKStepPseudo(double& halfPos, double& halfPres, double& halfTemp, dou
 
 void readConfiguration(std::map<std::string, std::string>& config)
 {
-    std::ifstream configFile("model.conf");
+    std::ifstream configFile("config/model.conf");
     std::string line;
 
     //read file into a map
@@ -333,12 +333,12 @@ int main()
 
     unsigned char scheme = stoi(configuration["scheme"]);
     unsigned char pseudo_scheme = stoi(configuration["pseudoadiabat"]);
-    std::string outputFilename = configuration["output_file"];
+    std::string outputFilename = "output/" + configuration["output_file"];
 
     //------------------------ import environmental variables ---------------------//
     
     Environment environment;
-    importEnvData(configuration["profile_file"], environment);
+    importEnvData("input/" + configuration["profile_file"], environment);
 
     //------------------------ set parcel and initial conditions ---------------------//
 
