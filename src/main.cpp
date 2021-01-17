@@ -13,137 +13,9 @@
 #include <string>
 #include <vector>
 
-//define structures
-
-struct Environment
-{
-    std::vector<double> height, pressure, temperature, dewpoint;
-};
-
-struct Sector
-{
-    size_t upper = 1;
-    size_t lower = 0;
-};
-
-struct Parcel
-{
-    std::unique_ptr<double[]> posZ;
-    std::unique_ptr<double[]> velZ;
-    std::unique_ptr<double[]> pres;
-    std::unique_ptr<double[]> temp;
-    std::unique_ptr<double[]> tmpV;
-    std::unique_ptr<double[]> mxrt;
-    std::unique_ptr<double[]> smxr;
-
-    Parcel(size_t size)
-    {
-        posZ = std::make_unique<double[]>(size + 1);
-        velZ = std::make_unique<double[]>(size + 1);
-        pres = std::make_unique<double[]>(size + 1);
-        temp = std::make_unique<double[]>(size + 1);
-        tmpV = std::make_unique<double[]>(size + 1);
-        mxrt = std::make_unique<double[]>(size + 1);
-        smxr = std::make_unique<double[]>(size + 1);
-    }
-};
-
 //define functions
 
-void updateSector(double location, Sector& sctr, const std::vector<double>& heightField)
-{
-    //assuming sorted array of ascending values in heightField and location within bounds of heightField
 
-    size_t nearestPoint;
-
-    //check which sector boundary is closest
-    double distToUpper = abs(location - heightField[sctr.upper]);
-    double distToLower = abs(location - heightField[sctr.lower]);
-
-    if (distToLower == distToUpper)
-    {
-        //no need for sector correction
-        return;
-    }
-    else if (distToLower < distToUpper)
-    {
-        if (sctr.lower == 0)
-        {
-            //location is in the lowest sector
-            sctr.upper = 1;
-            return;
-        }
-
-        //move sector gradually down
-        nearestPoint = sctr.lower;
-        double dist = distToLower;
-        double newDist = abs(location - heightField[nearestPoint - 1]);
-
-        while (newDist < dist)
-        {
-            dist = newDist;
-            nearestPoint--;
-
-            if (nearestPoint > 0)
-            {
-                newDist = abs(location - heightField[nearestPoint - 1]);
-            }
-        }
-    }
-    else if (distToLower > distToUpper)
-    {
-        if (sctr.upper == (heightField.size() - 1))
-        {
-            //location is in the highest sector
-            sctr.lower = heightField.size() - 2;
-            return;
-        }
-
-        //move sector gradually up
-        nearestPoint = sctr.upper;
-        double dist = distToUpper;
-        double newDist = abs(location - heightField[nearestPoint + 1]);
-
-        while (newDist < dist)
-        {
-            dist = newDist;
-            nearestPoint++;
-
-            if (nearestPoint < (heightField.size() - 1))
-            {
-                newDist = abs(location - heightField[nearestPoint + 1]);
-            }
-        }
-    }
-
-    double distToNearest = location - heightField[nearestPoint];
-
-    if (distToNearest >= 0)
-    {
-        sctr.lower = nearestPoint;
-        sctr.upper = nearestPoint + 1;
-        return;
-    }
-    else
-    {
-        sctr.lower = nearestPoint - 1;
-        sctr.upper = nearestPoint;
-        return;
-    }
-
-}
-
-double getPressureAtLocation(double location, const Sector& sctr, const std::vector<double>& heightField, const std::vector<double>& pressureField)
-{
-    //input in m; output in Pa
-
-    //do linear interpolation of pressure within the sector
-    double b = (pressureField[sctr.upper] - pressureField[sctr.lower]) / (heightField[sctr.upper] - heightField[sctr.lower]);
-    double a = pressureField[sctr.lower] - (heightField[sctr.lower] * b);
-
-    //caluclate and return pressure
-    return (a + (b * location)) * 100;
-}
 
 double getTemperatureAtLocation(double location, const Sector& sctr, const std::vector<double>& heightField, const std::vector<double>& temperatureField)
 {
@@ -218,25 +90,25 @@ double calcTemperatureInPseudoC(double pressure, double wbTemp)
 
 void updateParcelThermodynamicsAdiabatic(size_t i, Parcel& parcel, Sector& sector, const Environment& environment, const double gamma, const double lambda)
 {
-    updateSector(parcel.posZ[i], sector, environment.height);
+    updateSector(parcel.position[i], sector, environment.height);
 
     //calculate thermodynamic properties for adiabatic ascent
-    parcel.pres[i] = getPressureAtLocation(parcel.posZ[i], sector, environment.height, environment.pressure); //pressure of parcel always equalises with atmosphere
-    parcel.mxrt[i] = parcel.mxrt[i - 1]; //mixing ratio is conservative during adiabatic ascent
-    parcel.temp[i] = calcTemperatureInAdiabat(parcel.pres[i], gamma, lambda);
-    parcel.smxr[i] = calcMixingRatio(parcel.temp[i], parcel.pres[i]);
-    parcel.tmpV[i] = calcVirtualTemperature(parcel.temp[i], parcel.mxrt[i]);
+    parcel.pressure[i] = getPressureAtLocation(parcel.position[i], sector, environment.height, environment.pressure); //pressure of parcel always equalises with atmosphere
+    parcel.mixingRatio[i] = parcel.mixingRatio[i - 1]; //mixing ratio is conservative during adiabatic ascent
+    parcel.temperature[i] = calcTemperatureInAdiabat(parcel.pressure[i], gamma, lambda);
+    parcel.mixingRatioSaturated[i] = calcMixingRatio(parcel.temperature[i], parcel.pressure[i]);
+    parcel.temperatureVirtual[i] = calcVirtualTemperature(parcel.temperature[i], parcel.mixingRatio[i]);
 }
 
 void updateParcelThermodynamicsPseudo(size_t i, Parcel& parcel, Sector& sector, const Environment& environment, const double thetaW)
 {
-    updateSector(parcel.posZ[i], sector, environment.height);
+    updateSector(parcel.position[i], sector, environment.height);
 
-    parcel.pres[i] = getPressureAtLocation(parcel.posZ[i], sector, environment.height, environment.pressure);
-    parcel.temp[i] = calcTemperatureInPseudoC(parcel.pres[i], thetaW);
-    parcel.smxr[i] = calcMixingRatio(parcel.temp[i], parcel.pres[i]);
-    parcel.mxrt[i] = parcel.smxr[i];
-    parcel.tmpV[i] = calcVirtualTemperature(parcel.temp[i], parcel.mxrt[i]);
+    parcel.pressure[i] = getPressureAtLocation(parcel.position[i], sector, environment.height, environment.pressure);
+    parcel.temperature[i] = calcTemperatureInPseudoC(parcel.pressure[i], thetaW);
+    parcel.mixingRatioSaturated[i] = calcMixingRatio(parcel.temperature[i], parcel.pressure[i]);
+    parcel.mixingRatio[i] = parcel.mixingRatioSaturated[i];
+    parcel.temperatureVirtual[i] = calcVirtualTemperature(parcel.temperature[i], parcel.mixingRatio[i]);
 }
 
 void updateRKStepAdiabatic(double& halfPos, double& halfPres, double& halfTemp, double& halfTempV, Sector& halfSector, const Environment& environment, double mixr, const double gamma, const double lambda)
@@ -256,8 +128,9 @@ void updateRKStepPseudo(double& halfPos, double& halfPres, double& halfTemp, dou
     halfTempV = calcVirtualTemperature(halfTemp, halfMixr);
 }
 
-void readConfiguration(std::map<std::string, std::string>& config)
+std::map<std::string, std::string> readConfiguration()
 {
+    std::map<std::string, std::string> config;
     std::ifstream configFile("config/model.conf");
     std::string line;
 
@@ -276,36 +149,12 @@ void readConfiguration(std::map<std::string, std::string>& config)
         }
     }
 
+    config["profile_filename"] = "input/" + config["profile_file"];
+    config["output_filename"] = "output/" + config["output_filename"];
+
     configFile.close();
-}
 
-void importEnvData(std::string filename, Environment& env)
-{
-    std::ifstream txtProfile(filename);
-    std::string line;
-
-    //dummy getlines for skipping the header lines
-    getline(txtProfile, line);
-    getline(txtProfile, line);
-
-
-    //read variables line by line and push into separate vectors
-    while (getline(txtProfile, line))
-    {
-        std::stringstream lineStream(line);
-        std::string var;
-
-        getline(lineStream, var, ';');
-        env.height.push_back(stod(var));
-        getline(lineStream, var, ';');
-        env.pressure.push_back(stod(var));
-        getline(lineStream, var, ';');
-        env.temperature.push_back(stod(var));
-        getline(lineStream, var, ';');
-        env.dewpoint.push_back(stod(var));
-    }
-
-    txtProfile.close();
+    return config;
 }
 
 void outputData(const Parcel& parcel, std::string filename, size_t steps)
@@ -317,13 +166,13 @@ void outputData(const Parcel& parcel, std::string filename, size_t steps)
 
     for (size_t i = 0; i < steps; i++)
     {
-        output << parcel.posZ[i] << "; "
-            << parcel.velZ[i] << "; "
-            << parcel.pres[i] << "; "
-            << parcel.temp[i] << "; "
-            << parcel.tmpV[i] << "; "
-            << parcel.mxrt[i] << "; "
-            << parcel.smxr[i] << ";" << "\n";
+        output << parcel.position[i] << "; "
+            << parcel.velocity[i] << "; "
+            << parcel.pressure[i] << "; "
+            << parcel.temperature[i] << "; "
+            << parcel.temperatureVirtual[i] << "; "
+            << parcel.mixingRatio[i] << "; "
+            << parcel.mixingRatioSaturated[i] << ";" << "\n";
     }
 
     output.close();
@@ -331,52 +180,25 @@ void outputData(const Parcel& parcel, std::string filename, size_t steps)
 
 int main()
 {
-    //------------------------ read model configuration ---------------------//
-    std::map<std::string, std::string> configuration;
-    readConfiguration(configuration);
+    //read model configuration
+    const std::map<std::string, std::string> configuration = readConfiguration();  
 
-    unsigned char scheme = stoi(configuration["dynamic_scheme"]);
-    unsigned char pseudo_scheme = stoi(configuration["pseudoadiabatic_scheme"]);
-    std::string outputFilename = "output/" + configuration["output_file"];
-
-    //------------------------ import environmental variables ---------------------//
-    
-    Environment environment;
-    importEnvData("input/" + configuration["profile_file"], environment);
-
-    //------------------------ set parcel and initial conditions ---------------------//
-
-    //read values from file into variables and make calculations
-    double const dt = stod(configuration["timestep"]);
-    double const period = stod(configuration["period"]);
-    size_t itr = 0;
-
-    unsigned int const steps = static_cast<int>(floor((period * 3600) / dt));
-    double const dt2 = dt * dt;
+    //create environment from given profile file
+    Environment environment(configuration.at("profile_filename"));
 
     //create parcel
-    Parcel parcel(steps);
-
-    //write initial conditions into parcel and convert to SI units
-    parcel.posZ[itr] = stod(configuration["init_height"]);
-    parcel.velZ[itr] = stod(configuration["init_velocity"]);
-    parcel.temp[itr] = stod(configuration["init_temp"]) + 273.15;
+    Parcel parcel(configuration, environment);
 
     //determine initial sector parcel is in
-    Sector sector;
-    updateSector(parcel.posZ[0], sector, environment.height);
+    updateSector(parcel.position[0], sector, environment.height);
 
     //convert initial variables to other intermediate variables (in SI units)
-    parcel.pres[itr] = getPressureAtLocation(parcel.posZ[itr], sector, environment.height, environment.pressure);
-    parcel.mxrt[itr] = calcMixingRatio((stod(configuration["init_dewpoint"]) + 273.15), parcel.pres[itr]);
-    parcel.tmpV[itr] = calcVirtualTemperature(parcel.temp[itr], parcel.mxrt[itr]);
-    parcel.smxr[itr] = calcMixingRatio(parcel.temp[itr], parcel.pres[itr]);
 
     //------------------------ compute moist adiabatic ascent ---------------------//
 
     //constants for adaibatic ascent
-    double gamma = (1005.7 * ((1 + (parcel.mxrt[itr] * (1870.0 / 1005.7))) / (1 + parcel.mxrt[itr]))) / (718.0 * ((1 + (parcel.mxrt[itr] * (1410.0 / 718.0))) / (1 + parcel.mxrt[itr]))); //Bailyn (1994)
-    double lambda = pow(parcel.pres[itr], 1 - gamma) * pow(parcel.temp[itr], gamma);
+    double gamma = (1005.7 * ((1 + (parcel.mixingRatio[itr] * (1870.0 / 1005.7))) / (1 + parcel.mixingRatio[itr]))) / (718.0 * ((1 + (parcel.mixingRatio[itr] * (1410.0 / 718.0))) / (1 + parcel.mixingRatio[itr]))); //Bailyn (1994)
+    double lambda = pow(parcel.pressure[itr], 1 - gamma) * pow(parcel.temperature[itr], gamma);
 
     if (scheme == 1)
     {
@@ -384,20 +206,20 @@ int main()
         //using initial velocity and forward-time finite difference (1st order)
         itr++;
 
-        parcel.posZ[itr] = parcel.posZ[0] + (parcel.velZ[itr - 1] * dt);
+        parcel.position[itr] = parcel.position[0] + (parcel.velocity[itr - 1] * dt);
         updateParcelThermodynamicsAdiabatic(itr, parcel, sector, environment, gamma, lambda);
 
         //loop through adiabatic ascent
         //using centered-time finite difference (2nd order) for second derivative
-        while (parcel.smxr[itr] > parcel.mxrt[itr])
+        while (parcel.mixingRatioSaturated[itr] > parcel.mixingRatio[itr])
         {
             itr++;
 
-            double envVirtualTemperature = getEnvVirtualTemperature(parcel.posZ[itr - 1], sector, environment);
-            double bouyancyForce = calcBouyancyForce(parcel.tmpV[itr - 1], envVirtualTemperature);
+            double envVirtualTemperature = getEnvVirtualTemperature(parcel.position[itr - 1], sector, environment);
+            double bouyancyForce = calcBouyancyForce(parcel.temperatureVirtual[itr - 1], envVirtualTemperature);
 
-            parcel.posZ[itr] = (dt2 * bouyancyForce) + (2 * parcel.posZ[itr - 1]) - parcel.posZ[itr - 2];
-            parcel.velZ[itr - 1] = calcVelocity(parcel.posZ[itr - 1], parcel.posZ[itr], dt);
+            parcel.position[itr] = (dt2 * bouyancyForce) + (2 * parcel.position[itr - 1]) - parcel.position[itr - 2];
+            parcel.velocity[itr - 1] = calcVelocity(parcel.position[itr - 1], parcel.position[itr], dt);
             updateParcelThermodynamicsAdiabatic(itr, parcel, sector, environment, gamma, lambda);
 
             if (itr == steps)
@@ -411,31 +233,31 @@ int main()
     {
         //loop through timesteps
         //running two parallel Runge-Kutta schemes
-        while (parcel.smxr[itr] > parcel.mxrt[itr])
+        while (parcel.mixingRatioSaturated[itr] > parcel.mixingRatio[itr])
         {
             Sector halfSector = sector;
             double halfPres, halfTemp, halfTempV, halfPos;
 
-            double C0 = parcel.velZ[itr];
-            double K0 = calcBouyancyForce(parcel.tmpV[itr], getEnvVirtualTemperature(parcel.posZ[itr], sector, environment));
+            double C0 = parcel.velocity[itr];
+            double K0 = calcBouyancyForce(parcel.temperatureVirtual[itr], getEnvVirtualTemperature(parcel.position[itr], sector, environment));
 
-            double C1 = parcel.velZ[itr] + (0.5 * dt * K0);           
-            halfPos = parcel.posZ[itr] + (0.5 * dt * C0);
-            updateRKStepAdiabatic(halfPos, halfPres, halfTemp, halfTempV, halfSector, environment, parcel.mxrt[itr], gamma, lambda);
+            double C1 = parcel.velocity[itr] + (0.5 * dt * K0);           
+            halfPos = parcel.position[itr] + (0.5 * dt * C0);
+            updateRKStepAdiabatic(halfPos, halfPres, halfTemp, halfTempV, halfSector, environment, parcel.mixingRatio[itr], gamma, lambda);
             double K1 = calcBouyancyForce(halfTempV, getEnvVirtualTemperature(halfPos, halfSector, environment));
 
-            double C2 = parcel.velZ[itr] + (0.5 * dt * K1);
-            halfPos = parcel.posZ[itr] + (0.5 * dt * C1);
-            updateRKStepAdiabatic(halfPos, halfPres, halfTemp, halfTempV, halfSector, environment, parcel.mxrt[itr], gamma, lambda);
+            double C2 = parcel.velocity[itr] + (0.5 * dt * K1);
+            halfPos = parcel.position[itr] + (0.5 * dt * C1);
+            updateRKStepAdiabatic(halfPos, halfPres, halfTemp, halfTempV, halfSector, environment, parcel.mixingRatio[itr], gamma, lambda);
             double K2 = calcBouyancyForce(halfTempV, getEnvVirtualTemperature(halfPos, halfSector, environment));
 
-            double C3 = parcel.velZ[itr] +  (dt * K2);
-            halfPos = parcel.posZ[itr] + (dt * C2);
-            updateRKStepAdiabatic(halfPos, halfPres, halfTemp, halfTempV, halfSector, environment, parcel.mxrt[itr], gamma, lambda);
+            double C3 = parcel.velocity[itr] +  (dt * K2);
+            halfPos = parcel.position[itr] + (dt * C2);
+            updateRKStepAdiabatic(halfPos, halfPres, halfTemp, halfTempV, halfSector, environment, parcel.mixingRatio[itr], gamma, lambda);
             double K3 = calcBouyancyForce(halfTempV, getEnvVirtualTemperature(halfPos, halfSector, environment));
 
-            parcel.posZ[itr + 1] = parcel.posZ[itr] + ((dt / 6.0) * (C0 + 2 * C1 + 2 * C2 + C3));
-            parcel.velZ[itr + 1] = parcel.velZ[itr] + ((dt / 6.0) * (K0 + 2 * K1 + 2 * K2 + K3));
+            parcel.position[itr + 1] = parcel.position[itr] + ((dt / 6.0) * (C0 + 2 * C1 + 2 * C2 + C3));
+            parcel.velocity[itr + 1] = parcel.velocity[itr] + ((dt / 6.0) * (K0 + 2 * K1 + 2 * K2 + K3));
 
             updateParcelThermodynamicsAdiabatic((itr + 1), parcel, sector, environment, gamma, lambda);
 
@@ -450,25 +272,25 @@ int main()
     }
 
     //equalise mixing ratio and saturation mixing ratio
-    parcel.mxrt[itr] = parcel.smxr[itr];
+    parcel.mixingRatio[itr] = parcel.mixingRatioSaturated[itr];
 
     //------------------------ compute pseudoadiabatic ascent ---------------------//
 
     //calculate wet-bulb potential temperature for pseudoadiabatic ascent
-    const double thetaW = calcWBPotentialTemperature(parcel.temp[itr], parcel.mxrt[itr], parcel.smxr[itr], parcel.pres[itr]);
+    const double thetaW = calcWBPotentialTemperature(parcel.temperature[itr], parcel.mixingRatio[itr], parcel.mixingRatioSaturated[itr], parcel.pressure[itr]);
 
     if (scheme == 1)
     {
         //loop through timesteps until point of no moisture
-        while (parcel.mxrt[itr] > 0.0001)
+        while (parcel.mixingRatio[itr] > 0.0001)
         {
             itr++;
 
-            double envVirtualTemperature = getEnvVirtualTemperature(parcel.posZ[itr - 1], sector, environment);
-            double bouyancyForce = calcBouyancyForce(parcel.tmpV[itr - 1], envVirtualTemperature);
+            double envVirtualTemperature = getEnvVirtualTemperature(parcel.position[itr - 1], sector, environment);
+            double bouyancyForce = calcBouyancyForce(parcel.temperatureVirtual[itr - 1], envVirtualTemperature);
 
-            parcel.posZ[itr] = (dt2 * bouyancyForce) + (2 * parcel.posZ[itr - 1]) - parcel.posZ[itr - 2];
-            parcel.velZ[itr - 1] = calcVelocity(parcel.posZ[itr - 1], parcel.posZ[itr], dt);
+            parcel.position[itr] = (dt2 * bouyancyForce) + (2 * parcel.position[itr - 1]) - parcel.position[itr - 2];
+            parcel.velocity[itr - 1] = calcVelocity(parcel.position[itr - 1], parcel.position[itr], dt);
             updateParcelThermodynamicsPseudo(itr, parcel, sector, environment, thetaW);
 
             if (itr == steps)
@@ -482,31 +304,31 @@ int main()
     if (scheme == 2)
     {
         //loop through timesteps until point of no moisture
-        while (parcel.mxrt[itr] > 0.0001)
+        while (parcel.mixingRatio[itr] > 0.0001)
         {
             Sector halfSector = sector;
             double halfPres, halfTemp, halfTempV, halfMixr, halfPos;
 
-            double C0 = parcel.velZ[itr];
-            double K0 = calcBouyancyForce(parcel.tmpV[itr], getEnvVirtualTemperature(parcel.posZ[itr], sector, environment));
+            double C0 = parcel.velocity[itr];
+            double K0 = calcBouyancyForce(parcel.temperatureVirtual[itr], getEnvVirtualTemperature(parcel.position[itr], sector, environment));
 
-            double C1 = parcel.velZ[itr] + (0.5 * dt * K0);
-            halfPos = parcel.posZ[itr] + (0.5 * dt * C0);
+            double C1 = parcel.velocity[itr] + (0.5 * dt * K0);
+            halfPos = parcel.position[itr] + (0.5 * dt * C0);
             updateRKStepPseudo(halfPos, halfPres, halfTemp, halfTempV, halfMixr, halfSector, environment, thetaW);
             double K1 = calcBouyancyForce(halfTempV, getEnvVirtualTemperature(halfPos, halfSector, environment));
 
-            double C2 = parcel.velZ[itr] + (0.5 * dt * K1);
-            halfPos = parcel.posZ[itr] + (0.5 * dt * C1);
+            double C2 = parcel.velocity[itr] + (0.5 * dt * K1);
+            halfPos = parcel.position[itr] + (0.5 * dt * C1);
             updateRKStepPseudo(halfPos, halfPres, halfTemp, halfTempV, halfMixr, halfSector, environment, thetaW);
             double K2 = calcBouyancyForce(halfTempV, getEnvVirtualTemperature(halfPos, halfSector, environment));
 
-            double C3 = parcel.velZ[itr] + (dt * K2);
-            halfPos = parcel.posZ[itr] + (dt * C2);
+            double C3 = parcel.velocity[itr] + (dt * K2);
+            halfPos = parcel.position[itr] + (dt * C2);
             updateRKStepPseudo(halfPos, halfPres, halfTemp, halfTempV, halfMixr, halfSector, environment, thetaW);
             double K3 = calcBouyancyForce(halfTempV, getEnvVirtualTemperature(halfPos, halfSector, environment));
 
-            parcel.posZ[itr + 1] = parcel.posZ[itr] + ((dt / 6.0) * (C0 + 2 * C1 + 2 * C2 + C3));
-            parcel.velZ[itr + 1] = parcel.velZ[itr] + ((dt / 6.0) * (K0 + 2 * K1 + 2 * K2 + K3));
+            parcel.position[itr + 1] = parcel.position[itr] + ((dt / 6.0) * (C0 + 2 * C1 + 2 * C2 + C3));
+            parcel.velocity[itr + 1] = parcel.velocity[itr] + ((dt / 6.0) * (K0 + 2 * K1 + 2 * K2 + K3));
 
             updateParcelThermodynamicsPseudo((itr + 1), parcel, sector, environment, thetaW);
 
@@ -524,20 +346,20 @@ int main()
 
     //constants for adaibatic ascent
     gamma = 1005.7 / 718.0;
-    lambda = pow(parcel.pres[itr], 1 - gamma) * pow(parcel.temp[itr], gamma);
+    lambda = pow(parcel.pressure[itr], 1 - gamma) * pow(parcel.temperature[itr], gamma);
 
     if (scheme == 1)
     {
         //loop through timesteps
-        while (parcel.velZ[itr - 1] > 0)
+        while (parcel.velocity[itr - 1] > 0)
         {
             itr++;
 
-            double envTemperature = getTemperatureAtLocation(parcel.posZ[itr - 1], sector, environment.height, environment.temperature);
-            double bouyancyForce = calcBouyancyForce(parcel.tmpV[itr - 1], envTemperature);
+            double envTemperature = getTemperatureAtLocation(parcel.position[itr - 1], sector, environment.height, environment.temperature);
+            double bouyancyForce = calcBouyancyForce(parcel.temperatureVirtual[itr - 1], envTemperature);
 
-            parcel.posZ[itr] = (dt2 * bouyancyForce) + (2 * parcel.posZ[itr - 1]) - parcel.posZ[itr - 2];
-            parcel.velZ[itr - 1] = calcVelocity(parcel.posZ[itr - 1], parcel.posZ[itr], dt);
+            parcel.position[itr] = (dt2 * bouyancyForce) + (2 * parcel.position[itr - 1]) - parcel.position[itr - 2];
+            parcel.velocity[itr - 1] = calcVelocity(parcel.position[itr - 1], parcel.position[itr], dt);
             updateParcelThermodynamicsAdiabatic(itr, parcel, sector, environment, gamma, lambda);
 
             if (itr == steps)
