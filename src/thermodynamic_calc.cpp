@@ -1,4 +1,4 @@
-#include "thermcalc.h"
+#include "thermodynamic_calc.h"
 #include <cmath>
 
 double calcMixingRatio(double temperature, double pressure)

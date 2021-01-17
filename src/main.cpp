@@ -1,4 +1,8 @@
-#include "thermcalc.h"
+#include "dynamic_scheme.h"
+#include "environment.h"
+#include "parcel.h"
+#include "pseudoadiabatic_scheme.h"
+#include "thermodynamic_calc.h"
 #include <cmath>
 #include <fstream>
 #include <iomanip>
@@ -331,8 +335,8 @@ int main()
     std::map<std::string, std::string> configuration;
     readConfiguration(configuration);
 
-    unsigned char scheme = stoi(configuration["scheme"]);
-    unsigned char pseudo_scheme = stoi(configuration["pseudoadiabat"]);
+    unsigned char scheme = stoi(configuration["dynamic_scheme"]);
+    unsigned char pseudo_scheme = stoi(configuration["pseudoadiabatic_scheme"]);
     std::string outputFilename = "output/" + configuration["output_file"];
 
     //------------------------ import environmental variables ---------------------//
