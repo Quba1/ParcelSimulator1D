@@ -15,31 +15,6 @@
 
 //define functions
 
-
-
-double getTemperatureAtLocation(double location, const Sector& sctr, const std::vector<double>& heightField, const std::vector<double>& temperatureField)
-{
-    //input in m; output in K
-
-    //do linear interpolation of pressure within the sector
-    double b = (temperatureField[sctr.upper] - temperatureField[sctr.lower]) / (heightField[sctr.upper] - heightField[sctr.lower]);
-    double a = temperatureField[sctr.lower] - (heightField[sctr.lower] * b);
-
-    //caluclate and return pressure
-    return (a + (b * location)) + 273.15;
-}
-
-double getEnvVirtualTemperature(double location, const Sector& sctr, const Environment& env)
-{
-    double temperature = getTemperatureAtLocation(location, sctr, env.height, env.temperature);
-    double dewpoint = getTemperatureAtLocation(location, sctr, env.height, env.dewpoint);
-    double pressure = getPressureAtLocation(location, sctr, env.height, env.pressure);
-    double mixingRatio = calcMixingRatio(dewpoint, pressure);
-    double virtualTemperature = calcVirtualTemperature(temperature, mixingRatio);
-
-    return virtualTemperature;
-}
-
 double calcTemperatureInPseudoC(double pressure, double wbTemp)
 {
     //input in Pa & K; output in K
@@ -196,10 +171,10 @@ int main()
     switch (dynamicSchemeID)
     {
     case 1:
-        dynamicScheme = new FiniteDifferenceDynamics();
+        dynamicScheme = new FiniteDifferenceDynamics(std::stod(configuration.at("timestep")));
 
     case 2:
-        dynamicScheme = new RungeKuttaDynamics();
+        dynamicScheme = new RungeKuttaDynamics(std::stod(configuration.at("timestep")));
 
     default:
         printf("Incorect value of dynamic_scheme in model.conf\n");

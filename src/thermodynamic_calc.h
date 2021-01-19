@@ -14,8 +14,10 @@ double calcTemperatureInAdiabat(double pressure, double gamma, double lambda);
 
 double calcBouyancyForce(double parcelTv, double envTv);
 
-double calcVelocity(double position1, double position2, double dt);
-
 double calcWBPotentialTemperature(double temperature, double mixingRatio, double satMixingRatio, double pressure);
+
+double calcGamma(double mixingRatio);
+
+double calcLambda(double temperature, double pressure, double gamma);
 
 #endif

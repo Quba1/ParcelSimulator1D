@@ -2,12 +2,47 @@
 #include "environment.h"
 #include "parcel.h"
 
-double FiniteDifferenceDynamics::calculateStep(double bouynacy, double location)
+DynamicPair::DynamicPair()
 {
-	return bouynacy * location;
+	location = Environment::Location();
+	velocity = 0;
 }
 
-double RungeKuttaDynamics::calculateStep(double bouynacy, double location)
+FiniteDifferenceDynamics::FiniteDifferenceDynamics(double timeDelta) :
+	timeDelta(timeDelta)
 {
-	return bouynacy * location;
+	timeDeltaSquared = timeDelta * timeDelta;
+}
+
+RungeKuttaDynamics::RungeKuttaDynamics(double timeDelta) :
+	timeDelta(timeDelta)
+{
+	timeDeltaSquared = timeDelta * timeDelta;
+}
+
+DynamicPair FiniteDifferenceDynamics::computeFirstTimeStep(double bouyancyForce, DynamicPair currentDynamicPair)
+{
+	DynamicPair nextDynamicPair;
+
+	nextDynamicPair.location.position = currentDynamicPair.location.position + (currentDynamicPair.velocity * timeDelta);
+	nextDynamicPair.velocity = (nextDynamicPair.location.position - currentDynamicPair.location.position) / timeDelta;
+	nextDynamicPair.location.updateSector();
+
+	return nextDynamicPair;
+}
+
+DynamicPair FiniteDifferenceDynamics::computeTimeStep(double bouyancyForce, DynamicPair currentDynamicPair)
+{
+
+}
+
+DynamicPair RungeKuttaDynamics::computeFirstTimeStep(double bouyancyForce, DynamicPair currentDynamicPair)
+{
+	//redundant function to increase code safety and allow for universal interface of Dynamic Scheme
+	return computeTimeStep(bouyancyForce, currentDynamicPair);
+}
+
+DynamicPair RungeKuttaDynamics::computeTimeStep(double bouyancyForce, DynamicPair currentDynamicPair)
+{
+
 }

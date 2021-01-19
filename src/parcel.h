@@ -11,16 +11,19 @@
 class Parcel
 {
 private:
-	double timeDelta, timeDeltaSquared;
 	size_t ascentSteps, currentTimeStep;
 
-	void calculateConstants();
+	void calculateParcelSize();
 	void setupVariableFields();
 	void setInitialConditionsAndLocation();
 
 	void ascentAlongMoistAdiabat();
 	void ascentAlongPseudoAdiabat();
 	void ascentAlongDryAdiabat();
+
+	double getCurrentBouyancyForce();
+	void updateCurrentDynamics(DynamicPair dynamics);
+	void updateCurrentThermodynamicAdiabatically(double lambda, double gamma);
 
 public:
 	DynamicScheme* dynamicScheme;

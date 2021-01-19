@@ -31,11 +31,6 @@ double calcBouyancyForce(double parcelTv, double envTv)
     return G * ((parcelTv - envTv) / envTv);
 }
 
-double calcVelocity(double position1, double position2, double dt)
-{
-    return (position2 - position1) / dt;
-}
-
 double calcWBPotentialTemperature(double temperature, double mixingRatio, double satMixingRatio, double pressure)
 {
     //input in K & kg/kg & Pa; output in K
@@ -45,4 +40,16 @@ double calcWBPotentialTemperature(double temperature, double mixingRatio, double
     double wetTemperature = (45.114 - (51.489 * pow(273.15 / equiTemperature, 3.504))) + 273.15;
 
     return wetTemperature;
+}
+
+double calcGamma(double mixingRatio)
+{
+    double gamma = (1005.7 * ((1 + (mixingRatio * (1870.0 / 1005.7))) / (1 + mixingRatio))) / (718.0 * ((1 + (mixingRatio * (1410.0 / 718.0))) / (1 + mixingRatio))); //Bailyn (1994)
+    return gamma;
+}
+
+double calcLambda(double temperature, double pressure, double gamma)
+{
+    double lambda = pow(pressure, 1 - gamma) * pow(temperature, gamma);
+    return lambda;
 }

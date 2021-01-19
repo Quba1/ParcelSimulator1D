@@ -31,6 +31,8 @@ public:
 
 	Environment(std::string configurationFileName);
 	static double getPressureAtLocation(const Location& location);
+	static double getTemperatureAtLocation(const Location& location);
+	static double getDewpointAtLocation(const Location& location);
 
 private:
 	void importDataFrom(std::ifstream& file);

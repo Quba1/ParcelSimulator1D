@@ -68,6 +68,24 @@ double Environment::getPressureAtLocation(const Location& location)
 
 }
 
+double Environment::getTemperatureAtLocation(const Location& location)
+{
+    //input in m; output in K
+    double value = getInterpolatedValueofFieldAtLocation(temperature, location);
+
+    return value + 273.15;
+
+}
+
+double Environment::getDewpointAtLocation(const Location& location)
+{
+    //input in m; output in K
+    double value = getInterpolatedValueofFieldAtLocation(dewpoint, location);
+
+    return value + 273.15;
+
+}
+
 void Environment::Location::updateSector()
 {
     //assuming sorted array of ascending values in heightField and location within bounds of heightField

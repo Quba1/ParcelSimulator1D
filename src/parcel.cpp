@@ -13,17 +13,15 @@ Parcel::Parcel(const std::map<std::string, std::string>& parcelConfiguration, Dy
     dynamicScheme(dynamicScheme),
     pseudadiabaticScheme(pseudadiabaticScheme)
 {
-    calculateConstants();
-    setupVariableFields();
+    calculateParcelSize();
+    setupVariableFields();    
     setInitialConditionsAndLocation();
 }
 
-void Parcel::calculateConstants()
+void Parcel::calculateParcelSize()
 {
     double period = std::stod(parcelConfiguration.at("period"));
-
-    timeDelta = std::stod(parcelConfiguration.at("timestep"));
-    timeDeltaSquared = timeDelta * timeDelta;
+    double timeDelta = std::stod(parcelConfiguration.at("timestep"));
     
     ascentSteps = static_cast<size_t>(floor((period * 3600) / timeDelta) + 1); //including step zero
 }
@@ -63,10 +61,51 @@ void Parcel::setInitialConditionsAndLocation()
 
 void Parcel::ascentAlongMoistAdiabat() 
 {
-    double gamma = (1005.7 * ((1 + (mixingRatio[currentTimeStep] * (1870.0 / 1005.7))) / (1 + mixingRatio[currentTimeStep]))) / (718.0 * ((1 + (mixingRatio[currentTimeStep] * (1410.0 / 718.0))) / (1 + mixingRatio[currentTimeStep]))); //Bailyn (1994)
-    double lambda = pow(pressure[currentTimeStep], 1 - gamma) * pow(temperature[currentTimeStep], gamma);
+    //calculate ascent constants
+    double gamma = calcGamma(mixingRatio[currentTimeStep]);
+    double lambda = calcLambda(temperature[currentTimeStep], pressure[currentTimeStep], gamma);
+    
+    //setup DynamicPair to be updated
+    DynamicPair currentDynamicPair;
+    currentDynamicPair.velocity = velocity[currentTimeStep];
+    currentDynamicPair.location = currentLocation;
 
+    //compute first timestep
+    double bouyancyForce = getCurrentBouyancyForce();
+    currentDynamicPair = dynamicScheme->computeFirstTimeStep(bouyancyForce, currentDynamicPair);
+    
+    currentTimeStep++;
+    updateCurrentDynamics(currentDynamicPair);
+    updateCurrentThermodynamicAdiabatically(lambda, gamma);
 
+}
+
+double Parcel::getCurrentBouyancyForce()
+{
+    double envPressure = Environment::getPressureAtLocation(currentLocation);
+    double envTemperature = Environment::getTemperatureAtLocation(currentLocation);
+    double envDewpoint = Environment::getDewpointAtLocation(currentLocation);
+
+    double envMixingRatio = calcMixingRatio(envDewpoint, envPressure);
+    double envVirtualTemperature = calcVirtualTemperature(envTemperature, envMixingRatio);
+
+    return calcBouyancyForce(temperatureVirtual[currentTimeStep], envVirtualTemperature);
+}
+
+void Parcel::updateCurrentDynamics(DynamicPair dynamics)
+{
+    currentLocation = dynamics.location;
+    position[currentTimeStep] = dynamics.location.position;
+    velocity[currentTimeStep] = dynamics.velocity;
+}
+
+void Parcel::updateCurrentThermodynamicAdiabatically(double lambda, double gamma)
+{
+    pressure[currentTimeStep] = Environment::getPressureAtLocation(currentLocation); //pressure of parcel always equalises with atmosphere
+    mixingRatio[currentTimeStep] = mixingRatio[currentTimeStep - 1]; //mixing ratio is conservative during adiabatic ascent
+    temperature[currentTimeStep] = calcTemperatureInAdiabat(pressure[currentTimeStep], gamma, lambda);
+    mixingRatioSaturated[currentTimeStep] = calcMixingRatio(temperature[currentTimeStep], pressure[currentTimeStep]);
+    temperatureVirtual[currentTimeStep] = calcVirtualTemperature(temperature[currentTimeStep], mixingRatio[currentTimeStep]);
 }
 
 void Parcel::ascentAlongDryAdiabat()
