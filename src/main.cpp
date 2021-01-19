@@ -187,12 +187,7 @@ int main()
     Environment environment(configuration.at("profile_filename"));
 
     //create parcel
-    Parcel parcel(configuration, environment);
-
-    //determine initial sector parcel is in
-    updateSector(parcel.position[0], sector, environment.height);
-
-    //convert initial variables to other intermediate variables (in SI units)
+    Parcel parcel(configuration);
 
     //------------------------ compute moist adiabatic ascent ---------------------//
 
