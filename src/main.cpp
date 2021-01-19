@@ -186,14 +186,50 @@ int main()
     //create environment from given profile file
     Environment environment(configuration.at("profile_filename"));
 
+    //create instances of schemes
+    size_t dynamicSchemeID = stoi(configuration.at("dynamic_scheme"));
+    size_t pseudoadiabaticSchemeID = stoi(configuration.at("pseudoadiabatic_scheme"));
+
+    DynamicScheme* dynamicScheme = nullptr;
+    PseudoAdiabaticScheme* pseudoadiabaticScheme = nullptr;
+
+    switch (dynamicSchemeID)
+    {
+    case 1:
+        dynamicScheme = new FiniteDifferenceDynamics();
+
+    case 2:
+        dynamicScheme = new RungeKuttaDynamics();
+
+    default:
+        printf("Incorect value of dynamic_scheme in model.conf\n");
+        return -1;
+    }
+
+    switch (pseudoadiabaticSchemeID)
+    {
+    case 1:
+        pseudoadiabaticScheme = new FiniteDifferencePseudoadiabat();
+
+    case 2:
+        pseudoadiabaticScheme = new RungeKuttaPseudoadiabat();
+
+    case 3:
+        pseudoadiabaticScheme = new NumericalPseudoadiabat();
+
+    default:
+        printf("Incorect value of pseudoadiabatic_scheme in model.conf\n");
+        return -1;
+    }
+
+
     //create parcel
-    Parcel parcel(configuration);
+    Parcel parcel(configuration, dynamicScheme, pseudoadiabaticScheme);
 
     //------------------------ compute moist adiabatic ascent ---------------------//
 
     //constants for adaibatic ascent
-    double gamma = (1005.7 * ((1 + (parcel.mixingRatio[itr] * (1870.0 / 1005.7))) / (1 + parcel.mixingRatio[itr]))) / (718.0 * ((1 + (parcel.mixingRatio[itr] * (1410.0 / 718.0))) / (1 + parcel.mixingRatio[itr]))); //Bailyn (1994)
-    double lambda = pow(parcel.pressure[itr], 1 - gamma) * pow(parcel.temperature[itr], gamma);
+    
 
     if (scheme == 1)
     {

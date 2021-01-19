@@ -1,13 +1,17 @@
 #include "environment.h"
 #include "parcel.h"
 #include "thermodynamic_calc.h"
+#include "dynamic_scheme.h"
+#include "pseudoadiabatic_scheme.h"
 #include <cmath>
 #include <map>
 #include <memory>
 #include <string>
 
-Parcel::Parcel(const std::map<std::string, std::string>& parcelConfiguration):
-    parcelConfiguration(parcelConfiguration)
+Parcel::Parcel(const std::map<std::string, std::string>& parcelConfiguration, DynamicScheme*& dynamicScheme, PseudoAdiabaticScheme*& pseudadiabaticScheme) :
+    parcelConfiguration(parcelConfiguration),
+    dynamicScheme(dynamicScheme),
+    pseudadiabaticScheme(pseudadiabaticScheme)
 {
     calculateConstants();
     setupVariableFields();
@@ -47,10 +51,30 @@ void Parcel::setInitialConditionsAndLocation()
     currentLocation.position = position[0];
     currentLocation.updateSector();
 
+    currentTimeStep = 0;
+
     //intermediate variables initial conditions
     pressure[0] = Environment::getPressureAtLocation(currentLocation);
 
     mixingRatio[0] = calcMixingRatio((std::stod(parcelConfiguration.at("init_dewpoint")) + 273.15), pressure[0]);
     temperatureVirtual[0] = calcVirtualTemperature(temperature[0], mixingRatio[0]);
     mixingRatioSaturated[0] = calcMixingRatio(temperature[0], pressure[0]);
+}
+
+void Parcel::ascentAlongMoistAdiabat() 
+{
+    double gamma = (1005.7 * ((1 + (mixingRatio[currentTimeStep] * (1870.0 / 1005.7))) / (1 + mixingRatio[currentTimeStep]))) / (718.0 * ((1 + (mixingRatio[currentTimeStep] * (1410.0 / 718.0))) / (1 + mixingRatio[currentTimeStep]))); //Bailyn (1994)
+    double lambda = pow(pressure[currentTimeStep], 1 - gamma) * pow(temperature[currentTimeStep], gamma);
+
+
+}
+
+void Parcel::ascentAlongDryAdiabat()
+{
+
+}
+
+void Parcel::ascentAlongPseudoAdiabat()
+{
+
 }

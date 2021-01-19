@@ -9,20 +9,22 @@ public:
 	virtual double calculateStep(double bouyancy, double location) = 0;
 };
 
-class FiniteDifferenceDynamics : DynamicScheme
+class FiniteDifferenceDynamics : public DynamicScheme
 {
 private:
 
 public:
 	FiniteDifferenceDynamics() {};
+	double calculateStep(double bouyancy, double location);
 };
 
-class RungeKuttaDynamics : DynamicScheme
+class RungeKuttaDynamics : public DynamicScheme
 {
 private:
 
 public:
 	RungeKuttaDynamics() {};
+	double calculateStep(double bouyancy, double location);
 };
 
 #endif
