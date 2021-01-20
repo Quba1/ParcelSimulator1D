@@ -63,18 +63,6 @@ double calcTemperatureInPseudoC(double pressure, double wbTemp)
     return -999.0;
 }
 
-void updateParcelThermodynamicsAdiabatic(size_t i, Parcel& parcel, Sector& sector, const Environment& environment, const double gamma, const double lambda)
-{
-    updateSector(parcel.position[i], sector, environment.height);
-
-    //calculate thermodynamic properties for adiabatic ascent
-    parcel.pressure[i] = getPressureAtLocation(parcel.position[i], sector, environment.height, environment.pressure); //pressure of parcel always equalises with atmosphere
-    parcel.mixingRatio[i] = parcel.mixingRatio[i - 1]; //mixing ratio is conservative during adiabatic ascent
-    parcel.temperature[i] = calcTemperatureInAdiabat(parcel.pressure[i], gamma, lambda);
-    parcel.mixingRatioSaturated[i] = calcMixingRatio(parcel.temperature[i], parcel.pressure[i]);
-    parcel.temperatureVirtual[i] = calcVirtualTemperature(parcel.temperature[i], parcel.mixingRatio[i]);
-}
-
 void updateParcelThermodynamicsPseudo(size_t i, Parcel& parcel, Sector& sector, const Environment& environment, const double thetaW)
 {
     updateSector(parcel.position[i], sector, environment.height);
@@ -161,80 +149,31 @@ int main()
     //create environment from given profile file
     Environment environment(configuration.at("profile_filename"));
 
+    //create parcel
+    Parcel parcel(configuration);
+
     //create instances of schemes
     size_t dynamicSchemeID = stoi(configuration.at("dynamic_scheme"));
     size_t pseudoadiabaticSchemeID = stoi(configuration.at("pseudoadiabatic_scheme"));
 
-    DynamicScheme* dynamicScheme = nullptr;
-    PseudoAdiabaticScheme* pseudoadiabaticScheme = nullptr;
+    std::unique_ptr<DynamicScheme> dynamicScheme;
+    std::unique_ptr<PseudoAdiabaticScheme> pseudoadiabaticScheme;
 
     switch (dynamicSchemeID)
     {
     case 1:
-        dynamicScheme = new FiniteDifferenceDynamics(std::stod(configuration.at("timestep")));
+        dynamicScheme = std::make_unique<FiniteDifferenceDynamics>(parcel);
 
     case 2:
-        dynamicScheme = new RungeKuttaDynamics(std::stod(configuration.at("timestep")));
+        dynamicScheme = std::make_unique<RungeKuttaDynamics>(parcel);
 
     default:
         printf("Incorect value of dynamic_scheme in model.conf\n");
         return -1;
     }
 
-    switch (pseudoadiabaticSchemeID)
-    {
-    case 1:
-        pseudoadiabaticScheme = new FiniteDifferencePseudoadiabat();
-
-    case 2:
-        pseudoadiabaticScheme = new RungeKuttaPseudoadiabat();
-
-    case 3:
-        pseudoadiabaticScheme = new NumericalPseudoadiabat();
-
-    default:
-        printf("Incorect value of pseudoadiabatic_scheme in model.conf\n");
-        return -1;
-    }
-
-
-    //create parcel
-    Parcel parcel(configuration, dynamicScheme, pseudoadiabaticScheme);
-
-    //------------------------ compute moist adiabatic ascent ---------------------//
-
-    //constants for adaibatic ascent
-    
-
-    if (scheme == 1)
-    {
-        //compute first timestep
-        //using initial velocity and forward-time finite difference (1st order)
-        itr++;
-
-        parcel.position[itr] = parcel.position[0] + (parcel.velocity[itr - 1] * dt);
-        updateParcelThermodynamicsAdiabatic(itr, parcel, sector, environment, gamma, lambda);
-
-        //loop through adiabatic ascent
-        //using centered-time finite difference (2nd order) for second derivative
-        while (parcel.mixingRatioSaturated[itr] > parcel.mixingRatio[itr])
-        {
-            itr++;
-
-            double envVirtualTemperature = getEnvVirtualTemperature(parcel.position[itr - 1], sector, environment);
-            double bouyancyForce = calcBouyancyForce(parcel.temperatureVirtual[itr - 1], envVirtualTemperature);
-
-            parcel.position[itr] = (dt2 * bouyancyForce) + (2 * parcel.position[itr - 1]) - parcel.position[itr - 2];
-            parcel.velocity[itr - 1] = calcVelocity(parcel.position[itr - 1], parcel.position[itr], dt);
-            updateParcelThermodynamicsAdiabatic(itr, parcel, sector, environment, gamma, lambda);
-
-            if (itr == steps)
-            {
-                outputData(parcel, outputFilename, itr);
-                return 0;
-            }
-        }
-    }
+    //compute moist adiabatic ascent
+ 
     if (scheme == 2) //https://math.stackexchange.com/a/2023862
     {
         //loop through timesteps
@@ -247,7 +186,7 @@ int main()
             double C0 = parcel.velocity[itr];
             double K0 = calcBouyancyForce(parcel.temperatureVirtual[itr], getEnvVirtualTemperature(parcel.position[itr], sector, environment));
 
-            double C1 = parcel.velocity[itr] + (0.5 * dt * K0);           
+            double C1 = parcel.velocity[itr] + (0.5 * dt * K0);
             halfPos = parcel.position[itr] + (0.5 * dt * C0);
             updateRKStepAdiabatic(halfPos, halfPres, halfTemp, halfTempV, halfSector, environment, parcel.mixingRatio[itr], gamma, lambda);
             double K1 = calcBouyancyForce(halfTempV, getEnvVirtualTemperature(halfPos, halfSector, environment));
@@ -257,7 +196,7 @@ int main()
             updateRKStepAdiabatic(halfPos, halfPres, halfTemp, halfTempV, halfSector, environment, parcel.mixingRatio[itr], gamma, lambda);
             double K2 = calcBouyancyForce(halfTempV, getEnvVirtualTemperature(halfPos, halfSector, environment));
 
-            double C3 = parcel.velocity[itr] +  (dt * K2);
+            double C3 = parcel.velocity[itr] + (dt * K2);
             halfPos = parcel.position[itr] + (dt * C2);
             updateRKStepAdiabatic(halfPos, halfPres, halfTemp, halfTempV, halfSector, environment, parcel.mixingRatio[itr], gamma, lambda);
             double K3 = calcBouyancyForce(halfTempV, getEnvVirtualTemperature(halfPos, halfSector, environment));
@@ -267,18 +206,8 @@ int main()
 
             updateParcelThermodynamicsAdiabatic((itr + 1), parcel, sector, environment, gamma, lambda);
 
-            itr++;
-
-            if (itr == steps)
-            {
-                outputData(parcel, outputFilename, itr);
-                return 0;
-            }
         }
     }
-
-    //equalise mixing ratio and saturation mixing ratio
-    parcel.mixingRatio[itr] = parcel.mixingRatioSaturated[itr];
 
     //------------------------ compute pseudoadiabatic ascent ---------------------//
 

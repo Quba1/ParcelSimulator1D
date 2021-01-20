@@ -1,5 +1,6 @@
 #include "environment.h"
 #include "parcel.h"
+#include "thermodynamic_calc.h"
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -84,6 +85,16 @@ double Environment::getDewpointAtLocation(const Location& location)
 
     return value + 273.15;
 
+}
+
+double Environment::getVirtualTemperatureAtLocation(const Location& location)
+{
+    double press = getPressureAtLocation(location);
+    double temp = getTemperatureAtLocation(location);
+    double dwpt = getDewpointAtLocation(location);
+
+    double mixr = calcMixingRatio(dwpt, press);
+    return calcVirtualTemperature(temp, mixr);
 }
 
 void Environment::Location::updateSector()
