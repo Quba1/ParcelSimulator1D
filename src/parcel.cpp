@@ -36,7 +36,7 @@ void Parcel::calculateConstants()
 
 void Parcel::setupVariableFields()
 {
-    std::vector<double> holder(ascentSteps, 0.0);
+    std::vector<double> holder(ascentSteps, -999.0);
     position = holder;
     velocity = holder;
     pressure = holder;

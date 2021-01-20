@@ -68,6 +68,11 @@ void outputDataFrom(const Parcel& parcel)
 
     for (size_t i = 0; i < parcel.ascentSteps; i++)
     {
+        if (parcel.position[i] == -999.0)
+        {
+            break;
+        }
+
         output << parcel.position[i] << "; "
             << parcel.velocity[i] << "; "
             << parcel.pressure[i] << "; "
@@ -79,7 +84,7 @@ void outputDataFrom(const Parcel& parcel)
 
     output.close();
 
-    std::cout << "Model output in ./output/" + parcel.outputFileName + "\n";
+    std::cout << "Model output in ./" + parcel.outputFileName + "\n";
 }
 
 int main()
