@@ -2,13 +2,13 @@
 #include "thermodynamic_calc.h"
 #include "parcel.h"
 
-double NumericalPseudoadiabat::calculateCurrentPseudoadiabaticTemperature(Parcel::Slice parcelSlice, double WetBulbTheta)
+double NumericalPseudoadiabat::calculateCurrentPseudoadiabaticTemperature(Parcel::Slice currentParcelSlice, double deltaPressure, double WetBulbTheta)
 {
     //input in Pa & K; output in K
     //Bakhshaii & Stull (2013)
 
     //necesary unit conversions and declarations
-    double pressure = parcelSlice.pressure[1] / 1000.0;
+    double pressure = (currentParcelSlice.pressure + deltaPressure) / 1000.0;
     double wbTemp = WetBulbTheta - 273.15;
 
     //compute temperature
@@ -51,4 +51,14 @@ double NumericalPseudoadiabat::calculateCurrentPseudoadiabaticTemperature(Parcel
 
     //if theta out of range
     return -999.0;
+}
+
+double FiniteDifferencePseudoadiabat::calculateCurrentPseudoadiabaticTemperature(Parcel::Slice currentParcelSlice, double deltaPressure, double WetBulbTheta)
+{
+    return 0.0;
+}
+
+double RungeKuttaPseudoadiabat::calculateCurrentPseudoadiabaticTemperature(Parcel::Slice currentParcelSlice, double deltaPressure, double WetBulbTheta)
+{
+    return 0.0;
 }

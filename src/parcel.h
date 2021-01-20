@@ -18,13 +18,13 @@ private:
 public:
 	struct Slice
 	{
-		double position[2] = {};
-		double velocity[2] = {};
-		double pressure[2] = {};
-		double temperature[2] = {};
-		double temperatureVirtual[2] = {};
-		double mixingRatio[2] = {};
-		double mixingRatioSaturated[2] = {};
+		double position = 0;
+		double velocity = 0;
+		double pressure = 0;
+		double temperature = 0;
+		double temperatureVirtual = 0;
+		double mixingRatio = 0;
+		double mixingRatioSaturated = 0;
 
 		Slice() {};
 	};
@@ -45,7 +45,7 @@ public:
 	void updateCurrentThermodynamicsAdiabatically(double lambda, double gamma);
 	void updateCurrentThermodynamicsPseudoadiabatically();
 
-	Parcel::Slice getCurrentSlice();
+	Parcel::Slice getSlice(size_t stepsBackFromCurrent);
 };
 
 #endif

@@ -56,7 +56,8 @@ void FiniteDifferenceDynamics::ascentAlongPseudoAdiabat(size_t pseudoadiabaticSc
 
 		parcel.currentTimeStep++;
 		parcel.updateCurrentDynamicsAndPressure();
-		pseudoadiabaticScheme->calculateCurrentPseudoAdiabaticTemperature(parcel, wetBulbPotentialTemp);
+		double pressureDelta = parcel.pressure[parcel.currentTimeStep] - parcel.pressure[parcel.currentTimeStep - 1];
+		parcel.temperature[parcel.currentTimeStep] = pseudoadiabaticScheme->calculateCurrentPseudoadiabaticTemperature(parcel.getSlice(-1), pressureDelta, wetBulbPotentialTemp);
 		parcel.updateCurrentThermodynamicsPseudoadiabatically();
 	}
 }
@@ -147,12 +148,31 @@ void RungeKuttaDynamics::ascentAlongPseudoAdiabat(size_t pseudoadiabaticSchemeID
 	//loop through timesteps until point of no moisture
 	while (parcel.mixingRatio[parcel.currentTimeStep] > 0.0001 && parcel.currentTimeStep < parcel.ascentSteps)
 	{
-		makePseudoAdiabaticTimeStep();
+		makePseudoAdiabaticTimeStep(pseudoadiabaticSchemeID, wetBulbPotentialTemp);
 
 		parcel.currentTimeStep++;
 		parcel.updateCurrentDynamicsAndPressure();
-		pseudoadiabaticScheme->calculateCurrentPseudoAdiabaticTemperature(parcel, wetBulbPotentialTemp);
+		double pressureDelta = parcel.pressure[parcel.currentTimeStep] - parcel.pressure[parcel.currentTimeStep - 1];
+		parcel.temperature[parcel.currentTimeStep] = pseudoadiabaticScheme->calculateCurrentPseudoadiabaticTemperature(parcel.getSlice(-1), pressureDelta, wetBulbPotentialTemp);
 		parcel.updateCurrentThermodynamicsPseudoadiabatically();
+	}
+}
+
+void RungeKuttaDynamics::ascentAlongDryAdiabat()
+{
+	//calculate ascent constants
+	double gamma = 1005.7 / 718.0; //simiplified gamma for dry air
+	double lambda = calcLambda(parcel.temperature[parcel.currentTimeStep], parcel.pressure[parcel.currentTimeStep], gamma);
+
+	//loop through next timesteps
+	while (parcel.velocity[parcel.currentTimeStep] > 0 && parcel.currentTimeStep < parcel.ascentSteps)
+	{
+		makeAdiabaticTimeStep(lambda, gamma);
+
+		//update parcel properties
+		parcel.currentTimeStep++;
+		parcel.updateCurrentDynamicsAndPressure();
+		parcel.updateCurrentThermodynamicsAdiabatically(lambda, gamma);
 	}
 }
 
@@ -171,7 +191,7 @@ void RungeKuttaDynamics::makeAdiabaticTimeStep(double lambda, double gamma)
 	stepLocation.updateSector();
 	stepPressure = Environment::getPressureAtLocation(stepLocation);
 	stepTemperature = calcTemperatureInAdiabat(stepPressure, gamma, lambda);
-	stepTemperatureVirtual = calcMixingRatio(stepTemperature, parcel.mixingRatio[parcel.currentTimeStep]);
+	stepTemperatureVirtual = calcVirtualTemperature(stepTemperature, parcel.mixingRatio[parcel.currentTimeStep]);
 	double K1 = calcBouyancyForce(stepTemperatureVirtual, Environment::getVirtualTemperatureAtLocation(stepLocation));
 
 	double C2 = C0 + (0.5 * parcel.timeDelta * K1);
@@ -179,7 +199,7 @@ void RungeKuttaDynamics::makeAdiabaticTimeStep(double lambda, double gamma)
 	stepLocation.updateSector();
 	stepPressure = Environment::getPressureAtLocation(stepLocation);
 	stepTemperature = calcTemperatureInAdiabat(stepPressure, gamma, lambda);
-	stepTemperatureVirtual = calcMixingRatio(stepTemperature, parcel.mixingRatio[parcel.currentTimeStep]);
+	stepTemperatureVirtual = calcVirtualTemperature(stepTemperature, parcel.mixingRatio[parcel.currentTimeStep]);
 	double K2 = calcBouyancyForce(stepTemperatureVirtual, Environment::getVirtualTemperatureAtLocation(stepLocation));
 
 	double C3 = C0 + (0.5 * parcel.timeDelta * K2);
@@ -187,7 +207,7 @@ void RungeKuttaDynamics::makeAdiabaticTimeStep(double lambda, double gamma)
 	stepLocation.updateSector();
 	stepPressure = Environment::getPressureAtLocation(stepLocation);
 	stepTemperature = calcTemperatureInAdiabat(stepPressure, gamma, lambda);
-	stepTemperatureVirtual = calcMixingRatio(stepTemperature, parcel.mixingRatio[parcel.currentTimeStep]);
+	stepTemperatureVirtual = calcVirtualTemperature(stepTemperature, parcel.mixingRatio[parcel.currentTimeStep]);
 	double K3 = calcBouyancyForce(stepTemperatureVirtual, Environment::getVirtualTemperatureAtLocation(stepLocation));
 
 	parcel.position[parcel.currentTimeStep + 1] = parcel.position[parcel.currentTimeStep] + ((parcel.timeDelta / 6.0) * (C0 + 2 * C1 + 2 * C2 + C3));
@@ -195,10 +215,13 @@ void RungeKuttaDynamics::makeAdiabaticTimeStep(double lambda, double gamma)
 
 }
 
-void RungeKuttaDynamics::makePseudoAdiabaticTimeStep()
+void RungeKuttaDynamics::makePseudoAdiabaticTimeStep(size_t pseudoadiabaticSchemeID, double wetBulbTemperature)
 {
-	double stepTemperature, stepTemperatureVirtual, stepPressure;
+	std::unique_ptr<PseudoAdiabaticScheme> pseudoadiabaticScheme = choosePseudoAdiabaticScheme(pseudoadiabaticSchemeID);
+
+	double stepTemperature, stepTemperatureVirtual, stepPressure, deltaPressure, stepMixingRatio;
 	Environment::Location stepLocation = parcel.currentLocation;
+	Parcel::Slice stepSlice = parcel.getSlice(0);
 
 	double C0 = parcel.velocity[parcel.currentTimeStep];
 	double K0 = calcBouyancyForce(parcel.temperatureVirtual[parcel.currentTimeStep], Environment::getVirtualTemperatureAtLocation(parcel.currentLocation));
@@ -207,6 +230,34 @@ void RungeKuttaDynamics::makePseudoAdiabaticTimeStep()
 	stepLocation.position = parcel.currentLocation.position + (0.5 * parcel.timeDelta * C0);
 	stepLocation.updateSector();
 	stepPressure = Environment::getPressureAtLocation(stepLocation);
+	deltaPressure = stepPressure - stepSlice.pressure;
+	stepTemperature = pseudoadiabaticScheme->calculateCurrentPseudoadiabaticTemperature(stepSlice, deltaPressure, wetBulbTemperature);
+	stepMixingRatio = calcMixingRatio(stepTemperature, stepPressure);
+	stepTemperatureVirtual = calcVirtualTemperature(stepTemperature, stepMixingRatio);
+	double K1 = calcBouyancyForce(stepTemperatureVirtual, Environment::getVirtualTemperatureAtLocation(stepLocation));
+
+	double C2 = C0 + (0.5 * parcel.timeDelta * K1);
+	stepLocation.position = parcel.currentLocation.position + (0.5 * parcel.timeDelta * C1);
+	stepLocation.updateSector();
+	stepPressure = Environment::getPressureAtLocation(stepLocation);
+	deltaPressure = stepPressure - stepSlice.pressure;
+	stepTemperature = pseudoadiabaticScheme->calculateCurrentPseudoadiabaticTemperature(stepSlice, deltaPressure, wetBulbTemperature);
+	stepMixingRatio = calcMixingRatio(stepTemperature, stepPressure);
+	stepTemperatureVirtual = calcVirtualTemperature(stepTemperature, stepMixingRatio);
+	double K2 = calcBouyancyForce(stepTemperatureVirtual, Environment::getVirtualTemperatureAtLocation(stepLocation));
+
+	double C3 = C0 + (0.5 * parcel.timeDelta * K2);
+	stepLocation.position = parcel.currentLocation.position + (0.5 * parcel.timeDelta * C2);
+	stepLocation.updateSector();
+	stepPressure = Environment::getPressureAtLocation(stepLocation);
+	deltaPressure = stepPressure - stepSlice.pressure;
+	stepTemperature = pseudoadiabaticScheme->calculateCurrentPseudoadiabaticTemperature(stepSlice, deltaPressure, wetBulbTemperature);
+	stepMixingRatio = calcMixingRatio(stepTemperature, stepPressure);
+	stepTemperatureVirtual = calcVirtualTemperature(stepTemperature, stepMixingRatio);
+	double K3 = calcBouyancyForce(stepTemperatureVirtual, Environment::getVirtualTemperatureAtLocation(stepLocation));
+
+	parcel.position[parcel.currentTimeStep + 1] = parcel.position[parcel.currentTimeStep] + ((parcel.timeDelta / 6.0) * (C0 + 2 * C1 + 2 * C2 + C3));
+	parcel.velocity[parcel.currentTimeStep + 1] = parcel.velocity[parcel.currentTimeStep] + ((parcel.timeDelta / 6.0) * (K0 + 2 * K1 + 2 * K2 + K3));
 }
 
 std::unique_ptr<PseudoAdiabaticScheme> RungeKuttaDynamics::choosePseudoAdiabaticScheme(size_t pseudoadiabaticSchemeID)
