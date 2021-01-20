@@ -69,17 +69,24 @@ void Parcel::setInitialConditionsAndLocation()
     mixingRatioSaturated[0] = calcMixingRatio(temperature[0], pressure[0]);
 }
 
-void Parcel::updateCurrentDynamics()
+void Parcel::updateCurrentDynamicsAndPressure()
 {
     currentLocation.position = position[currentTimeStep];
     currentLocation.updateSector();
+    pressure[currentTimeStep] = Environment::getPressureAtLocation(currentLocation); //pressure of parcel always equalises with atmosphere
 }
 
 void Parcel::updateCurrentThermodynamicsAdiabatically(double lambda, double gamma)
 {
-    pressure[currentTimeStep] = Environment::getPressureAtLocation(currentLocation); //pressure of parcel always equalises with atmosphere
-    mixingRatio[currentTimeStep] = mixingRatio[currentTimeStep - 1]; //mixing ratio is conservative during adiabatic ascent
     temperature[currentTimeStep] = calcTemperatureInAdiabat(pressure[currentTimeStep], gamma, lambda);
+    mixingRatio[currentTimeStep] = mixingRatio[currentTimeStep - 1]; //mixing ratio is conservative during adiabatic ascent
     mixingRatioSaturated[currentTimeStep] = calcMixingRatio(temperature[currentTimeStep], pressure[currentTimeStep]);
+    temperatureVirtual[currentTimeStep] = calcVirtualTemperature(temperature[currentTimeStep], mixingRatio[currentTimeStep]);
+}
+
+void Parcel::updateCurrentThermodynamicsPseudoadiabatically()
+{
+    mixingRatioSaturated[currentTimeStep] = calcMixingRatio(temperature[currentTimeStep], pressure[currentTimeStep]);
+    mixingRatio[currentTimeStep] = mixingRatioSaturated[currentTimeStep];
     temperatureVirtual[currentTimeStep] = calcVirtualTemperature(temperature[currentTimeStep], mixingRatio[currentTimeStep]);
 }

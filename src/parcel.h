@@ -26,9 +26,9 @@ public:
 	Parcel();
 	Parcel(const std::map<std::string, std::string>& parcelConfiguration);
 
-	void updateCurrentDynamics();
+	void updateCurrentDynamicsAndPressure();
 	void updateCurrentThermodynamicsAdiabatically(double lambda, double gamma);
-	void updateCurrentThermodynamicallyPseudoadiabatically();
+	void updateCurrentThermodynamicsPseudoadiabatically();
 };
 
 #endif

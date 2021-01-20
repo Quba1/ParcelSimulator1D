@@ -10,6 +10,7 @@ void FiniteDifferenceDynamics::runSimulationOn(Parcel& passedParcel, size_t pseu
 
 	ascentAlongMoistAdiabat();
 	ascentAlongPseudoAdiabat(pseudoadiabaticSchemeID);
+	ascentAlongDryAdiabat();
 }
 
 std::unique_ptr<PseudoAdiabaticScheme> FiniteDifferenceDynamics::choosePseudoAdiabaticScheme(size_t pseudoadiabaticSchemeID)
@@ -37,17 +38,17 @@ void FiniteDifferenceDynamics::ascentAlongMoistAdiabat()
 
 	//update parcel properties
 	parcel.currentTimeStep++;
-	parcel.updateCurrentDynamics();
+	parcel.updateCurrentDynamicsAndPressure();
 	parcel.updateCurrentThermodynamicsAdiabatically(lambda, gamma);
 
 	//loop through next timesteps
-	while (parcel.mixingRatioSaturated[parcel.currentTimeStep] > parcel.mixingRatio[parcel.currentTimeStep])
+	while (parcel.mixingRatioSaturated[parcel.currentTimeStep] > parcel.mixingRatio[parcel.currentTimeStep] && parcel.currentTimeStep < parcel.ascentSteps)
 	{
 		makeTimeStep();
 
 		//update parcel properties
 		parcel.currentTimeStep++;
-		parcel.updateCurrentDynamics();
+		parcel.updateCurrentDynamicsAndPressure();
 		parcel.updateCurrentThermodynamicsAdiabatically(lambda, gamma);
 	}
 
@@ -57,12 +58,37 @@ void FiniteDifferenceDynamics::ascentAlongMoistAdiabat()
 
 void FiniteDifferenceDynamics::ascentAlongPseudoAdiabat(size_t pseudoadiabaticSchemeID)
 {
+	//create pseudodynamic scheme
 	std::unique_ptr<PseudoAdiabaticScheme> pseudoadiabaticScheme = choosePseudoAdiabaticScheme(pseudoadiabaticSchemeID);
 
+	//calculate wet-bulb potential temperature for pseudoadiabatic ascent
+	double wetBulbPotentialTemp = calcWBPotentialTemperature(parcel.temperature[parcel.currentTimeStep], parcel.mixingRatio[parcel.currentTimeStep], parcel.mixingRatioSaturated[parcel.currentTimeStep], parcel.pressure[parcel.currentTimeStep]);
+
 	//loop through timesteps until point of no moisture
-	while (parcel.mixingRatio[parcel.currentTimeStep] > 0.0001)
+	while (parcel.mixingRatio[parcel.currentTimeStep] > 0.0001 && parcel.currentTimeStep < parcel.ascentSteps)
 	{
 		makeTimeStep();
+
+		parcel.currentTimeStep++;
+		parcel.updateCurrentDynamicsAndPressure();
+		pseudoadiabaticScheme->calculateCurrentPseudoAdiabaticTemperature(parcel, wetBulbPotentialTemp);
+		parcel.updateCurrentThermodynamicsPseudoadiabatically();
+	}
+}
+
+void FiniteDifferenceDynamics::ascentAlongDryAdiabat()
+{
+	double gamma = 1005.7 / 718.0; //simiplified gamma for dry air
+	double lambda = calcLambda(parcel.temperature[parcel.currentTimeStep], parcel.pressure[parcel.currentTimeStep], gamma);
+
+	while (parcel.velocity[parcel.currentTimeStep] > 0 && parcel.currentTimeStep < parcel.ascentSteps)
+	{
+		makeTimeStep();
+
+		//update parcel properties
+		parcel.currentTimeStep++;
+		parcel.updateCurrentDynamicsAndPressure();
+		parcel.updateCurrentThermodynamicsAdiabatically(lambda, gamma);
 	}
 }
 
