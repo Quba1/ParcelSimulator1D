@@ -92,7 +92,7 @@ void Parcel::updateCurrentThermodynamicsPseudoadiabatically()
 
 Parcel::Slice Parcel::getSlice(size_t stepsForwardFromCurrent)
 {
-    size_t timestep = currentTimeStep - stepsForwardFromCurrent;
+    size_t timestep = currentTimeStep + stepsForwardFromCurrent;
     Parcel::Slice slice;
 
     slice.position = position[timestep];

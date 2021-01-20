@@ -38,7 +38,7 @@ std::map<std::string, std::string> readConfigurationFromFile(std::string filenam
 
     if(config.find("profile_filename") != config.end())
     {
-        config["profile_filename"] = "input/" + config["profile_file"];
+        config["profile_filename"] = "input/" + config["profile_filename"];
     }
         
 
@@ -54,7 +54,14 @@ std::map<std::string, std::string> readConfigurationFromFile(std::string filenam
 
 void outputDataFrom(const Parcel& parcel)
 {
-    std::ofstream output("output/" + parcel.outputFileName);
+    std::ofstream output(parcel.outputFileName);
+
+    if (!output.is_open())
+    {
+        printf("Directory ./output must exits. Please create it!\n");
+        return;
+    }
+
     output << std::fixed << std::setprecision(5);
 
     output << "position; velocity; pressure; temperature; virtual_temperature; mixing_ratio; saturation_mixing_ratio;" << "\n";
@@ -91,20 +98,21 @@ int main()
     size_t dynamicSchemeID = stoi(modelConfiguration.at("dynamic_scheme"));
     size_t pseudoAdiabaticSchemeID = stoi(parcelConfiguration.at("pseudoadiabatic_scheme"));
 
-    switch (dynamicSchemeID)
+    if (dynamicSchemeID == 1)
     {
-    case 1:
         dynamicScheme = std::make_unique<FiniteDifferenceDynamics>();
-
-    case 2:
+    }
+    else if (dynamicSchemeID == 2)
+    {
         dynamicScheme = std::make_unique<RungeKuttaDynamics>();
-
-    default:
+    }
+    else
+    {
         printf("Incorect value of dynamic_scheme in model.conf\n");
         return -1;
     }
 
-    dynamicScheme->runSimulationOn(parcel, pseudoAdiabaticSchemeID);
+    parcel = dynamicScheme->runSimulationOn(parcel, pseudoAdiabaticSchemeID);
 
     outputDataFrom(parcel);
     return 0;

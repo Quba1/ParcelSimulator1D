@@ -1,6 +1,7 @@
 #include "thermodynamic_calc.h"
 #include "parcel.h"
 #include "pseudoadiabatic_scheme.h"
+#include <cmath>
 
 double NumericalPseudoadiabat::calculateCurrentPseudoadiabaticTemperature(Parcel::Slice currentParcelSlice, double deltaPressure, double WetBulbTheta)
 {

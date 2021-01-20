@@ -4,13 +4,15 @@
 #include "dynamic_scheme.h"
 #include "pseudoadiabatic_scheme.h"
 
-void FiniteDifferenceDynamics::runSimulationOn(Parcel& passedParcel, size_t pseudoadiabaticSchemeID)
+Parcel FiniteDifferenceDynamics::runSimulationOn(Parcel& passedParcel, size_t pseudoadiabaticSchemeID)
 {
 	parcel = passedParcel;
 
 	ascentAlongMoistAdiabat();
 	ascentAlongPseudoAdiabat(pseudoadiabaticSchemeID);
 	ascentAlongDryAdiabat();
+
+	return parcel;
 }
 
 void FiniteDifferenceDynamics::ascentAlongMoistAdiabat()
@@ -94,29 +96,33 @@ void FiniteDifferenceDynamics::makeTimeStep()
 
 std::unique_ptr<PseudoAdiabaticScheme> FiniteDifferenceDynamics::choosePseudoAdiabaticScheme(size_t pseudoadiabaticSchemeID)
 {
-	switch (pseudoadiabaticSchemeID)
+	if (pseudoadiabaticSchemeID == 1)
 	{
-	case 1:
 		return std::make_unique<FiniteDifferencePseudoadiabat>();
-
-	case 2:
+	}
+	else if (pseudoadiabaticSchemeID == 2)
+	{
 		return std::make_unique<RungeKuttaPseudoadiabat>();
-
-	case 3:
+	}
+	else if (pseudoadiabaticSchemeID == 3)
+	{
 		return std::make_unique<NumericalPseudoadiabat>();
-
-	default:
+	}
+	else
+	{
 		return nullptr;
 	}
 }
 
-void RungeKuttaDynamics::runSimulationOn(Parcel& passedParcel, size_t pseudoadiabaticSchemeID)
+Parcel RungeKuttaDynamics::runSimulationOn(Parcel& passedParcel, size_t pseudoadiabaticSchemeID)
 {
 	parcel = passedParcel;
 
 	ascentAlongMoistAdiabat();
 	ascentAlongPseudoAdiabat(pseudoadiabaticSchemeID);
 	ascentAlongDryAdiabat();
+
+	return parcel;
 }
 
 void RungeKuttaDynamics::ascentAlongMoistAdiabat()
@@ -265,18 +271,20 @@ void RungeKuttaDynamics::makePseudoAdiabaticTimeStep(size_t pseudoadiabaticSchem
 
 std::unique_ptr<PseudoAdiabaticScheme> RungeKuttaDynamics::choosePseudoAdiabaticScheme(size_t pseudoadiabaticSchemeID)
 {
-	switch (pseudoadiabaticSchemeID)
+	if (pseudoadiabaticSchemeID == 1)
 	{
-	case 1:
 		return std::make_unique<FiniteDifferencePseudoadiabat>();
-
-	case 2:
+	}
+	else if (pseudoadiabaticSchemeID == 2)
+	{
 		return std::make_unique<RungeKuttaPseudoadiabat>();
-
-	case 3:
+	}
+	else if (pseudoadiabaticSchemeID == 3)
+	{
 		return std::make_unique<NumericalPseudoadiabat>();
-
-	default:
+	}
+	else
+	{
 		return nullptr;
 	}
 }

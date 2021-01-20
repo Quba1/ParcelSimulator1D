@@ -10,7 +10,7 @@
 class DynamicScheme
 {
 public:
-	virtual void runSimulationOn(Parcel& passedParcel, size_t pseudoadiabaticSchemeID) = 0;
+	virtual Parcel runSimulationOn(Parcel& passedParcel, size_t pseudoadiabaticSchemeID) = 0;
 };
 
 class FiniteDifferenceDynamics : public DynamicScheme
@@ -28,7 +28,7 @@ private:
 	void makeTimeStep();
 
 public:
-	void runSimulationOn(Parcel& passedParcel, size_t pseudoadiabaticSchemeID);
+	Parcel runSimulationOn(Parcel& passedParcel, size_t pseudoadiabaticSchemeID);
 };
 
 class RungeKuttaDynamics : public DynamicScheme
@@ -46,7 +46,7 @@ private:
 	void makePseudoAdiabaticTimeStep(size_t pseudoadiabaticSchemeID, double wetBulbTemperature);
 
 public:
-	void runSimulationOn(Parcel& passedParcel, size_t pseudoadiabaticSchemeID);
+	Parcel runSimulationOn(Parcel& passedParcel, size_t pseudoadiabaticSchemeID);
 };
 
 #endif
