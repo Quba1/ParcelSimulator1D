@@ -78,6 +78,8 @@ void outputDataFrom(const Parcel& parcel)
     }
 
     output.close();
+
+    std::cout << "Model output in ./output/" + parcel.outputFileName + "\n";
 }
 
 int main()
