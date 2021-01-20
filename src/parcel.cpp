@@ -91,3 +91,18 @@ void Parcel::updateCurrentThermodynamicsPseudoadiabatically()
     mixingRatio[currentTimeStep] = mixingRatioSaturated[currentTimeStep];
     temperatureVirtual[currentTimeStep] = calcVirtualTemperature(temperature[currentTimeStep], mixingRatio[currentTimeStep]);
 }
+
+Parcel::Slice Parcel::getCurrentSlice()
+{
+    Parcel::Slice slice;
+
+    for (size_t i = 0; i <= 1; i++)
+    {
+        slice.position[1 - i] = position[currentTimeStep - i];
+        slice.pressure[1 - i] = pressure[currentTimeStep - i];
+        slice.temperature[1 - i] = temperature[currentTimeStep - i];
+        slice.mixingRatio[1 - i] = mixingRatio[currentTimeStep - i];
+        slice.mixingRatioSaturated[1 - i] = mixingRatioSaturated[currentTimeStep - i];
+        slice.temperatureVirtual[1 - i] = temperatureVirtual[currentTimeStep - i];
+    }
+}

@@ -7,7 +7,7 @@ class PseudoAdiabaticScheme
 {
 public:
 	PseudoAdiabaticScheme() {};
-	virtual void calculateCurrentPseudoAdiabaticTemperature(Parcel& parcel, double WetBulbTheta) = 0;
+	virtual double calculateCurrentPseudoadiabaticTemperature(Parcel::Slice parcelSlice, double WetBulbTheta) = 0;
 
 private:
 
@@ -17,7 +17,7 @@ class FiniteDifferencePseudoadiabat : public PseudoAdiabaticScheme
 {
 public:
 	FiniteDifferencePseudoadiabat() {};
-	void calculateCurrentPseudoadiabaticTemperature(Parcel& parcel, double WetBulbTheta);
+	double calculateCurrentPseudoadiabaticTemperature(Parcel::Slice parcelSlice, double WetBulbTheta);
 
 private:
 
@@ -27,7 +27,7 @@ class RungeKuttaPseudoadiabat : public PseudoAdiabaticScheme
 {
 public:
 	RungeKuttaPseudoadiabat() {};
-	void calculateCurrentPseudoadiabaticTemperature(Parcel& parcel, double WetBulbTheta);
+	double calculateCurrentPseudoadiabaticTemperature(Parcel::Slice parcelSlice, double WetBulbTheta);
 
 private:
 
@@ -37,7 +37,7 @@ class NumericalPseudoadiabat : public PseudoAdiabaticScheme
 {
 public:
 	NumericalPseudoadiabat() {};
-	void calculateCurrentPseudoadiabaticTemperature(Parcel& parcel, double WetBulbTheta);
+	double calculateCurrentPseudoadiabaticTemperature(Parcel::Slice parcelSlice, double WetBulbTheta);
 
 private:
 

@@ -2,14 +2,13 @@
 #include "thermodynamic_calc.h"
 #include "parcel.h"
 
-void NumericalPseudoadiabat::calculateCurrentPseudoadiabaticTemperature(Parcel& parcel, double WetBulbTheta)
+double NumericalPseudoadiabat::calculateCurrentPseudoadiabaticTemperature(Parcel::Slice parcelSlice, double WetBulbTheta)
 {
     //input in Pa & K; output in K
     //Bakhshaii & Stull (2013)
 
     //necesary unit conversions and declarations
-    double newTemperature;
-    double pressure = parcel.pressure[parcel.currentTimeStep] / 1000.0;
+    double pressure = parcelSlice.pressure[1] / 1000.0;
     double wbTemp = WetBulbTheta - 273.15;
 
     //compute temperature
@@ -22,7 +21,7 @@ void NumericalPseudoadiabat::calculateCurrentPseudoadiabaticTemperature(Parcel& 
         double g5 = pow(exp(wbTemp - (2.71828 * cos(pressure / 18.5219))), (1.0 / 6.0));
         double g6 = wbTemp - sin(pow(pressure + wbTemp + atan(wbTemp) + 6.6165, 0.5));
 
-        newTemperature = g1 + g2 + g3 + g4 + g5 + g6 + 273.15;
+        return g1 + g2 + g3 + g4 + g5 + g6 + 273.15;
 
     }
     else if (wbTemp > 4.0 && wbTemp <= 21.0)
@@ -35,7 +34,7 @@ void NumericalPseudoadiabat::calculateCurrentPseudoadiabaticTemperature(Parcel& 
         double g6 = ((1.0 / 3.0) * log(339.0316 - pressure)) + atan(wbTemp - pressure + 95.9839);
         double g7 = -(log(pressure) * ((298.2909 + (16.5109 * pressure)) / (pressure - 2.2183)));
 
-        newTemperature = g1 + g2 + g3 + g4 + g5 + g6 + g7 + 273.15;
+        return g1 + g2 + g3 + g4 + g5 + g6 + g7 + 273.15;
     }
     else if (wbTemp > 21.0 && wbTemp < 45.0)
     {
@@ -47,12 +46,9 @@ void NumericalPseudoadiabat::calculateCurrentPseudoadiabaticTemperature(Parcel& 
         double g6 = ((pressure / pow(wbTemp, 2)) * std::min(9.6112, pressure - wbTemp)) - 13.73;
         double g7 = sin(pow(sin(std::min(pressure, 17.3170)), 3.0) - pow(pressure, 0.5) + (25.5113 / wbTemp));
 
-        newTemperature = g1 + g2 + g3 + g4 + g5 + g6 + g7 + 273.15;
+        return g1 + g2 + g3 + g4 + g5 + g6 + g7 + 273.15;
     }
 
     //if theta out of range
-    newTemperature = -999.0;
-
-    //write calculated temperature to parcel
-    parcel.temperature[parcel.currentTimeStep] = newTemperature;
+    return -999.0;
 }

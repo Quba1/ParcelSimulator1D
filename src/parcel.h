@@ -16,6 +16,19 @@ private:
 	void setInitialConditionsAndLocation();
 
 public:
+	struct Slice
+	{
+		double position[2] = {};
+		double velocity[2] = {};
+		double pressure[2] = {};
+		double temperature[2] = {};
+		double temperatureVirtual[2] = {};
+		double mixingRatio[2] = {};
+		double mixingRatioSaturated[2] = {};
+
+		Slice() {};
+	};
+
 	std::map<std::string, std::string> parcelConfiguration;
 	std::string outputFileName;
 
@@ -31,6 +44,8 @@ public:
 	void updateCurrentDynamicsAndPressure();
 	void updateCurrentThermodynamicsAdiabatically(double lambda, double gamma);
 	void updateCurrentThermodynamicsPseudoadiabatically();
+
+	Parcel::Slice getCurrentSlice();
 };
 
 #endif
