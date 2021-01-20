@@ -14,15 +14,6 @@
 #include <vector>
 
 //define functions
-
-void updateRKStepAdiabatic(double& halfPos, double& halfPres, double& halfTemp, double& halfTempV, Sector& halfSector, const Environment& environment, double mixr, const double gamma, const double lambda)
-{
-    updateSector(halfPos, halfSector, environment.height);
-    halfPres = getPressureAtLocation(halfPos, halfSector, environment.height, environment.pressure);
-    halfTemp = calcTemperatureInAdiabat(halfPres, gamma, lambda);
-    halfTempV = calcVirtualTemperature(halfTemp, mixr);
-}
-
 void updateRKStepPseudo(double& halfPos, double& halfPres, double& halfTemp, double& halfTempV, double& halfMixr, Sector& halfSector, const Environment& environment, const double thetaW)
 {
     updateSector(halfPos, halfSector, environment.height);
@@ -103,9 +94,9 @@ int main()
     Parcel parcel(parcelConfiguration);
 
     //create instances of schemes
-    size_t dynamicSchemeID = stoi(modelConfiguration.at("dynamic_scheme"));
-
     std::unique_ptr<DynamicScheme> dynamicScheme;
+
+    size_t dynamicSchemeID = stoi(modelConfiguration.at("dynamic_scheme"));
 
     switch (dynamicSchemeID)
     {
@@ -118,43 +109,6 @@ int main()
     default:
         printf("Incorect value of dynamic_scheme in model.conf\n");
         return -1;
-    }
-
-    //compute moist adiabatic ascent
- 
-    if (scheme == 2) //https://math.stackexchange.com/a/2023862
-    {
-        //loop through timesteps
-        //running two parallel Runge-Kutta schemes
-        while (parcel.mixingRatioSaturated[itr] > parcel.mixingRatio[itr])
-        {
-            Sector halfSector = sector;
-            double halfPres, halfTemp, halfTempV, halfPos;
-
-            double C0 = parcel.velocity[itr];
-            double K0 = calcBouyancyForce(parcel.temperatureVirtual[itr], getEnvVirtualTemperature(parcel.position[itr], sector, environment));
-
-            double C1 = parcel.velocity[itr] + (0.5 * dt * K0);
-            halfPos = parcel.position[itr] + (0.5 * dt * C0);
-            updateRKStepAdiabatic(halfPos, halfPres, halfTemp, halfTempV, halfSector, environment, parcel.mixingRatio[itr], gamma, lambda);
-            double K1 = calcBouyancyForce(halfTempV, getEnvVirtualTemperature(halfPos, halfSector, environment));
-
-            double C2 = parcel.velocity[itr] + (0.5 * dt * K1);
-            halfPos = parcel.position[itr] + (0.5 * dt * C1);
-            updateRKStepAdiabatic(halfPos, halfPres, halfTemp, halfTempV, halfSector, environment, parcel.mixingRatio[itr], gamma, lambda);
-            double K2 = calcBouyancyForce(halfTempV, getEnvVirtualTemperature(halfPos, halfSector, environment));
-
-            double C3 = parcel.velocity[itr] + (dt * K2);
-            halfPos = parcel.position[itr] + (dt * C2);
-            updateRKStepAdiabatic(halfPos, halfPres, halfTemp, halfTempV, halfSector, environment, parcel.mixingRatio[itr], gamma, lambda);
-            double K3 = calcBouyancyForce(halfTempV, getEnvVirtualTemperature(halfPos, halfSector, environment));
-
-            parcel.position[itr + 1] = parcel.position[itr] + ((dt / 6.0) * (C0 + 2 * C1 + 2 * C2 + C3));
-            parcel.velocity[itr + 1] = parcel.velocity[itr] + ((dt / 6.0) * (K0 + 2 * K1 + 2 * K2 + K3));
-
-            updateParcelThermodynamicsAdiabatic((itr + 1), parcel, sector, environment, gamma, lambda);
-
-        }
     }
 
     //------------------------ compute pseudoadiabatic ascent ---------------------//
@@ -189,13 +143,6 @@ int main()
 
             updateParcelThermodynamicsPseudo((itr + 1), parcel, sector, environment, thetaW);
 
-            itr++;
-
-            if (itr == steps)
-            {
-                outputData(parcel, outputFilename, itr);
-                return 0;
-            }
         }
     }
 

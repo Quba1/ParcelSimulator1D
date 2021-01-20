@@ -34,13 +34,15 @@ class RungeKuttaDynamics : public DynamicScheme
 {
 private:
 	Parcel parcel;
+
+	std::unique_ptr<PseudoAdiabaticScheme> choosePseudoAdiabaticScheme(size_t pseudoadiabaticSchemeID);
+
 	void ascentAlongMoistAdiabat();
-	void ascentAlongPseudoAdiabat();
+	void ascentAlongPseudoAdiabat(size_t pseudoadiabaticSchemeID);
 	void ascentAlongDryAdiabat();
-	void computeTimeStep();
 
-	double getVirtualTemperatureinStepAt(Environment::Location location);
-
+	void makeAdiabaticTimeStep(double lambda, double gamma);
+	void makePseudoAdiabaticTimeStep();
 
 public:
 	void runSimulationOn(Parcel& passedParcel, size_t pseudoadiabaticSchemeID);
