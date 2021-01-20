@@ -5,6 +5,11 @@
 #include <string>
 #include <vector>
 
+std::vector<double> Environment::height;
+std::vector<double> Environment::pressure;
+std::vector<double> Environment::temperature;
+std::vector<double> Environment::dewpoint;
+
 Sector::Sector()
 {
     lowerBoundary = 0;
