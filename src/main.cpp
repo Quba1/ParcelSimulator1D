@@ -1,8 +1,8 @@
-#include "dynamic_scheme.h"
+#include "thermodynamic_calc.h"
 #include "environment.h"
 #include "parcel.h"
 #include "pseudoadiabatic_scheme.h"
-#include "thermodynamic_calc.h"
+#include "dynamic_scheme.h"
 #include <cmath>
 #include <fstream>
 #include <iomanip>
@@ -54,7 +54,7 @@ std::map<std::string, std::string> readConfigurationFromFile(std::string filenam
 
 void outputDataFrom(const Parcel& parcel)
 {
-    std::ofstream output(parcel.outputFileName);
+    std::ofstream output("output/" + parcel.outputFileName);
     output << std::fixed << std::setprecision(5);
 
     output << "position; velocity; pressure; temperature; virtual_temperature; mixing_ratio; saturation_mixing_ratio;" << "\n";

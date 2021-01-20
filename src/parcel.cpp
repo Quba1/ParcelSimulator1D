@@ -1,8 +1,6 @@
 #include "environment.h"
 #include "parcel.h"
 #include "thermodynamic_calc.h"
-#include "dynamic_scheme.h"
-#include "pseudoadiabatic_scheme.h"
 #include <cmath>
 #include <map>
 #include <memory>
@@ -103,4 +101,6 @@ Parcel::Slice Parcel::getSlice(size_t stepsForwardFromCurrent)
     slice.mixingRatio = mixingRatio[timestep];
     slice.mixingRatioSaturated = mixingRatioSaturated[timestep];
     slice.temperatureVirtual = temperatureVirtual[timestep];
+
+    return slice;
 }

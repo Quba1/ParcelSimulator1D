@@ -1,6 +1,7 @@
 #ifndef DYNAMICS_H
 #define DYNAMICS_H
 
+#include "thermodynamic_calc.h"
 #include "environment.h"
 #include "parcel.h"
 #include "pseudoadiabatic_scheme.h"

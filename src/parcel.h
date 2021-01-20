@@ -1,11 +1,9 @@
 #ifndef PARCEL_H
 #define PARCEL_H
 
+#include "thermodynamic_calc.h"
 #include "environment.h"
-#include "dynamic_scheme.h"
-#include "pseudoadiabatic_scheme.h"
 #include <map>
-#include <memory>
 #include <string>
 
 class Parcel

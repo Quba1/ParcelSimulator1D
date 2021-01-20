@@ -1,8 +1,8 @@
-#include "dynamic_scheme.h"
+#include "thermodynamic_calc.h"
 #include "environment.h"
 #include "parcel.h"
+#include "dynamic_scheme.h"
 #include "pseudoadiabatic_scheme.h"
-#include "thermodynamic_calc.h"
 
 void FiniteDifferenceDynamics::runSimulationOn(Parcel& passedParcel, size_t pseudoadiabaticSchemeID)
 {
@@ -104,6 +104,9 @@ std::unique_ptr<PseudoAdiabaticScheme> FiniteDifferenceDynamics::choosePseudoAdi
 
 	case 3:
 		return std::make_unique<NumericalPseudoadiabat>();
+
+	default:
+		return nullptr;
 	}
 }
 
@@ -272,6 +275,9 @@ std::unique_ptr<PseudoAdiabaticScheme> RungeKuttaDynamics::choosePseudoAdiabatic
 
 	case 3:
 		return std::make_unique<NumericalPseudoadiabat>();
+
+	default:
+		return nullptr;
 	}
 }
 
