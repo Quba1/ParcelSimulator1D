@@ -42,7 +42,7 @@ private:
 	void ascentAlongDryAdiabat();
 
 	void makeAdiabaticTimeStep(double lambda, double gamma);
-	void makePseudoAdiabaticTimeStep();
+	void makePseudoAdiabaticTimeStep(size_t pseudoadiabaticSchemeID, double wetBulbTemperature);
 
 public:
 	void runSimulationOn(Parcel& passedParcel, size_t pseudoadiabaticSchemeID);
