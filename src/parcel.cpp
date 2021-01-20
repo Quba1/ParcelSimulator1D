@@ -18,7 +18,8 @@ Parcel::Parcel()
 }
 
 Parcel::Parcel(const std::map<std::string, std::string>& parcelConfiguration) :
-    parcelConfiguration(parcelConfiguration)
+    parcelConfiguration(parcelConfiguration),
+    outputFileName(parcelConfiguration.at("output_filename"))
 {
     calculateConstants();
     setupVariableFields();

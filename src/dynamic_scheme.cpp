@@ -145,10 +145,3 @@ void RungeKuttaDynamics::computeTimeStep()
 
 	return nextDynamicPair;
 }
-
-double RungeKuttaDynamics::getVirtualTemperatureinStepAt(Environment::Location location)
-{
-	halfPres = getPressureAtLocation(halfPos, halfSector, environment.height, environment.pressure);
-	halfTemp = calcTemperatureInAdiabat(halfPres, gamma, lambda);
-	halfTempV = calcVirtualTemperature(halfTemp, mixr);
-}

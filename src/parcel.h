@@ -17,6 +17,8 @@ private:
 
 public:
 	std::map<std::string, std::string> parcelConfiguration;
+	std::string outputFileName;
+
 	std::vector<double> position, velocity, pressure, temperature, temperatureVirtual, mixingRatio, mixingRatioSaturated;
 
 	size_t ascentSteps, currentTimeStep;
