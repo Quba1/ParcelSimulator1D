@@ -36,7 +36,7 @@ double calcWBPotentialTemperature(double temperature, double mixingRatio, double
     //input in K & kg/kg & Pa; output in K
     double vapourPressure = (6.1121 * exp((17.502 * (temperature - 273.15)) / (240.97 + (temperature - 273.15)))) * 100.0;
     double dryTemperature = temperature * pow(100000.0 / ((pressure - vapourPressure)), 0.2854);
-    double equiTemperature = dryTemperature * pow(mixingRatio / satMixingRatio, -(0.2854 * (mixingRatio / EPSILON))) * exp((2555000.0 * mixingRatio) / (1005.7 * temperature)); //Bryan (2008)
+    double equiTemperature = dryTemperature * pow(mixingRatio / satMixingRatio, -(0.2854 * (mixingRatio / EPSILON))) * exp((2555000.0 * mixingRatio) / (C_P * temperature)); //Bryan (2008)
     double wetTemperature = (45.114 - (51.489 * pow(273.15 / equiTemperature, 3.504))) + 273.15;
 
     return wetTemperature;
@@ -44,7 +44,7 @@ double calcWBPotentialTemperature(double temperature, double mixingRatio, double
 
 double calcGamma(double mixingRatio)
 {
-    double gamma = (1005.7 * ((1 + (mixingRatio * (1870.0 / 1005.7))) / (1 + mixingRatio))) / (718.0 * ((1 + (mixingRatio * (1410.0 / 718.0))) / (1 + mixingRatio))); //Bailyn (1994)
+    double gamma = (C_P * ((1 + (mixingRatio * (C_PV / C_P))) / (1 + mixingRatio))) / (C_V * ((1 + (mixingRatio * (C_VV / C_V))) / (1 + mixingRatio))); //Bailyn (1994)
     return gamma;
 }
 

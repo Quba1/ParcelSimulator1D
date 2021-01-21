@@ -66,7 +66,7 @@ void FiniteDifferenceDynamics::ascentAlongPseudoAdiabat(size_t pseudoadiabaticSc
 
 void FiniteDifferenceDynamics::ascentAlongDryAdiabat()
 {
-	double gamma = 1005.7 / 718.0; //simiplified gamma for dry air
+	double gamma = C_P / C_V; //simiplified gamma for dry air
 	double lambda = calcLambda(parcel.temperature[parcel.currentTimeStep], parcel.pressure[parcel.currentTimeStep], gamma);
 
 	while (parcel.velocity[parcel.currentTimeStep] > 0 && parcel.currentTimeStep < parcel.ascentSteps)
@@ -170,7 +170,7 @@ void RungeKuttaDynamics::ascentAlongPseudoAdiabat(size_t pseudoadiabaticSchemeID
 void RungeKuttaDynamics::ascentAlongDryAdiabat()
 {
 	//calculate ascent constants
-	double gamma = 1005.7 / 718.0; //simiplified gamma for dry air
+	double gamma = C_P / C_V; //simiplified gamma for dry air
 	double lambda = calcLambda(parcel.temperature[parcel.currentTimeStep], parcel.pressure[parcel.currentTimeStep], gamma);
 
 	//loop through next timesteps
