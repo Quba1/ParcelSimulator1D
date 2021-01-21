@@ -4,12 +4,12 @@
 #include "dynamic_scheme.h"
 #include "pseudoadiabatic_scheme.h"
 
-Parcel FiniteDifferenceDynamics::runSimulationOn(Parcel& passedParcel, size_t pseudoadiabaticSchemeID)
+Parcel FiniteDifferenceDynamics::runSimulationOn(Parcel& passedParcel)
 {
 	parcel = passedParcel;
 
 	ascentAlongMoistAdiabat();
-	ascentAlongPseudoAdiabat(pseudoadiabaticSchemeID);
+	ascentAlongPseudoAdiabat();
 	ascentAlongDryAdiabat();
 
 	return parcel;
@@ -43,10 +43,10 @@ void FiniteDifferenceDynamics::ascentAlongMoistAdiabat()
 	parcel.mixingRatio[parcel.currentTimeStep] = parcel.mixingRatioSaturated[parcel.currentTimeStep];
 }
 
-void FiniteDifferenceDynamics::ascentAlongPseudoAdiabat(size_t pseudoadiabaticSchemeID)
+void FiniteDifferenceDynamics::ascentAlongPseudoAdiabat()
 {
 	//create pseudodynamic scheme
-	std::unique_ptr<PseudoAdiabaticScheme> pseudoadiabaticScheme = choosePseudoAdiabaticScheme(pseudoadiabaticSchemeID);
+	std::unique_ptr<PseudoAdiabaticScheme> pseudoadiabaticScheme = choosePseudoAdiabaticScheme();
 
 	//calculate wet-bulb potential temperature for pseudoadiabatic ascent
 	double wetBulbPotentialTemp = calcWBPotentialTemperature(parcel.temperature[parcel.currentTimeStep], parcel.mixingRatio[parcel.currentTimeStep], parcel.mixingRatioSaturated[parcel.currentTimeStep], parcel.pressure[parcel.currentTimeStep]);
@@ -94,8 +94,10 @@ void FiniteDifferenceDynamics::makeTimeStep()
 	parcel.velocity[parcel.currentTimeStep + 1] = (parcel.position[parcel.currentTimeStep + 1] - parcel.position[parcel.currentTimeStep]) / parcel.timeDelta;
 }
 
-std::unique_ptr<PseudoAdiabaticScheme> FiniteDifferenceDynamics::choosePseudoAdiabaticScheme(size_t pseudoadiabaticSchemeID)
+std::unique_ptr<PseudoAdiabaticScheme> FiniteDifferenceDynamics::choosePseudoAdiabaticScheme()
 {
+	size_t pseudoadiabaticSchemeID = std::stoi(parcel.parcelConfiguration.at("pseudoadiabatic_scheme"));
+
 	if (pseudoadiabaticSchemeID == 1)
 	{
 		return std::make_unique<FiniteDifferencePseudoadiabat>();
@@ -114,12 +116,12 @@ std::unique_ptr<PseudoAdiabaticScheme> FiniteDifferenceDynamics::choosePseudoAdi
 	}
 }
 
-Parcel RungeKuttaDynamics::runSimulationOn(Parcel& passedParcel, size_t pseudoadiabaticSchemeID)
+Parcel RungeKuttaDynamics::runSimulationOn(Parcel& passedParcel)
 {
 	parcel = passedParcel;
 
 	ascentAlongMoistAdiabat();
-	ascentAlongPseudoAdiabat(pseudoadiabaticSchemeID);
+	ascentAlongPseudoAdiabat();
 	ascentAlongDryAdiabat();
 
 	return parcel;
@@ -146,10 +148,10 @@ void RungeKuttaDynamics::ascentAlongMoistAdiabat()
 	parcel.mixingRatio[parcel.currentTimeStep] = parcel.mixingRatioSaturated[parcel.currentTimeStep];
 }
 
-void RungeKuttaDynamics::ascentAlongPseudoAdiabat(size_t pseudoadiabaticSchemeID)
+void RungeKuttaDynamics::ascentAlongPseudoAdiabat()
 {
 	//create pseudodynamic scheme
-	std::unique_ptr<PseudoAdiabaticScheme> pseudoadiabaticScheme = choosePseudoAdiabaticScheme(pseudoadiabaticSchemeID);
+	std::unique_ptr<PseudoAdiabaticScheme> pseudoadiabaticScheme = choosePseudoAdiabaticScheme();
 
 	//calculate wet-bulb potential temperature for pseudoadiabatic ascent
 	double wetBulbPotentialTemp = calcWBPotentialTemperature(parcel.temperature[parcel.currentTimeStep], parcel.mixingRatio[parcel.currentTimeStep], parcel.mixingRatioSaturated[parcel.currentTimeStep], parcel.pressure[parcel.currentTimeStep]);
@@ -157,7 +159,7 @@ void RungeKuttaDynamics::ascentAlongPseudoAdiabat(size_t pseudoadiabaticSchemeID
 	//loop through timesteps until point of no moisture
 	while (parcel.mixingRatio[parcel.currentTimeStep] > 0.0001 && parcel.currentTimeStep < parcel.ascentSteps)
 	{
-		makePseudoAdiabaticTimeStep(pseudoadiabaticSchemeID, wetBulbPotentialTemp);
+		makePseudoAdiabaticTimeStep(wetBulbPotentialTemp);
 
 		parcel.currentTimeStep++;
 		parcel.updateCurrentDynamicsAndPressure();
@@ -224,9 +226,9 @@ void RungeKuttaDynamics::makeAdiabaticTimeStep(double lambda, double gamma)
 
 }
 
-void RungeKuttaDynamics::makePseudoAdiabaticTimeStep(size_t pseudoadiabaticSchemeID, double wetBulbTemperature)
+void RungeKuttaDynamics::makePseudoAdiabaticTimeStep(double wetBulbTemperature)
 {
-	std::unique_ptr<PseudoAdiabaticScheme> pseudoadiabaticScheme = choosePseudoAdiabaticScheme(pseudoadiabaticSchemeID);
+	std::unique_ptr<PseudoAdiabaticScheme> pseudoadiabaticScheme = choosePseudoAdiabaticScheme();
 
 	double stepTemperature, stepTemperatureVirtual, stepPressure, deltaPressure, stepMixingRatio;
 	Environment::Location stepLocation = parcel.currentLocation;
@@ -269,8 +271,10 @@ void RungeKuttaDynamics::makePseudoAdiabaticTimeStep(size_t pseudoadiabaticSchem
 	parcel.velocity[parcel.currentTimeStep + 1] = parcel.velocity[parcel.currentTimeStep] + ((parcel.timeDelta / 6.0) * (K0 + 2 * K1 + 2 * K2 + K3));
 }
 
-std::unique_ptr<PseudoAdiabaticScheme> RungeKuttaDynamics::choosePseudoAdiabaticScheme(size_t pseudoadiabaticSchemeID)
+std::unique_ptr<PseudoAdiabaticScheme> RungeKuttaDynamics::choosePseudoAdiabaticScheme()
 {
+	size_t pseudoadiabaticSchemeID = std::stoi(parcel.parcelConfiguration.at("pseudoadiabatic_scheme"));
+
 	if (pseudoadiabaticSchemeID == 1)
 	{
 		return std::make_unique<FiniteDifferencePseudoadiabat>();

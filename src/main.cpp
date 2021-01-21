@@ -103,7 +103,6 @@ int main()
     std::unique_ptr<DynamicScheme> dynamicScheme;
 
     size_t dynamicSchemeID = stoi(modelConfiguration.at("dynamic_scheme"));
-    size_t pseudoAdiabaticSchemeID = stoi(parcelConfiguration.at("pseudoadiabatic_scheme"));
 
     if (dynamicSchemeID == 1)
     {
@@ -119,7 +118,7 @@ int main()
         return -1;
     }
 
-    parcel = dynamicScheme->runSimulationOn(parcel, pseudoAdiabaticSchemeID);
+    parcel = dynamicScheme->runSimulationOn(parcel);
 
     outputDataFrom(parcel);
     return 0;

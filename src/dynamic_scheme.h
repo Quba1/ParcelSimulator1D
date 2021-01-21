@@ -10,7 +10,7 @@
 class DynamicScheme
 {
 public:
-	virtual Parcel runSimulationOn(Parcel& passedParcel, size_t pseudoadiabaticSchemeID) = 0;
+	virtual Parcel runSimulationOn(Parcel& passedParcel) = 0;
 };
 
 class FiniteDifferenceDynamics : public DynamicScheme
@@ -18,17 +18,17 @@ class FiniteDifferenceDynamics : public DynamicScheme
 private:
 	Parcel parcel;
 
-	std::unique_ptr<PseudoAdiabaticScheme> choosePseudoAdiabaticScheme(size_t pseudoadiabaticSchemeID);
+	std::unique_ptr<PseudoAdiabaticScheme> choosePseudoAdiabaticScheme();
 
 	void ascentAlongMoistAdiabat();
-	void ascentAlongPseudoAdiabat(size_t pseudoadiabaticSchemeID);
+	void ascentAlongPseudoAdiabat();
 	void ascentAlongDryAdiabat();
 
 	void makeFirstTimeStep();
 	void makeTimeStep();
 
 public:
-	Parcel runSimulationOn(Parcel& passedParcel, size_t pseudoadiabaticSchemeID);
+	Parcel runSimulationOn(Parcel& passedParcel);
 };
 
 class RungeKuttaDynamics : public DynamicScheme
@@ -36,17 +36,17 @@ class RungeKuttaDynamics : public DynamicScheme
 private:
 	Parcel parcel;
 
-	std::unique_ptr<PseudoAdiabaticScheme> choosePseudoAdiabaticScheme(size_t pseudoadiabaticSchemeID);
+	std::unique_ptr<PseudoAdiabaticScheme> choosePseudoAdiabaticScheme();
 
 	void ascentAlongMoistAdiabat();
-	void ascentAlongPseudoAdiabat(size_t pseudoadiabaticSchemeID);
+	void ascentAlongPseudoAdiabat();
 	void ascentAlongDryAdiabat();
 
 	void makeAdiabaticTimeStep(double lambda, double gamma);
-	void makePseudoAdiabaticTimeStep(size_t pseudoadiabaticSchemeID, double wetBulbTemperature);
+	void makePseudoAdiabaticTimeStep(double wetBulbTemperature);
 
 public:
-	Parcel runSimulationOn(Parcel& passedParcel, size_t pseudoadiabaticSchemeID);
+	Parcel runSimulationOn(Parcel& passedParcel);
 };
 
 #endif
