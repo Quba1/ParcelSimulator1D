@@ -1,5 +1,5 @@
 all: build/thermo.o build/environment.o build/parcel.o build/pseudo.o build/RK_dynamic.o build/FD_dynamic.o | output
-	g++ -O3 build/dynamic.o build/pseudo.o build/environment.o build/thermo.o build/parcel.o src/main.cpp -o simulator.exe
+	g++ -O3 build/RK_dynamic.o build/FD_dynamic.o build/pseudo.o build/environment.o build/thermo.o build/parcel.o src/main.cpp -o simulator.exe
 	rm -rf build
 
 build/thermo.o: src/thermodynamic_calc.cpp src/thermodynamic_calc.h | build
