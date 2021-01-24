@@ -142,6 +142,12 @@ void Environment::Location::updateSector()
             {
                 newDist = abs(position - height[nearestPoint - 1]);
             }
+            else
+            {
+                sector.lowerBoundary = 0;
+                sector.upperBoundary = 1;
+                return;
+            }
         }
     }
     else if (distToLower > distToUpper)
@@ -166,6 +172,12 @@ void Environment::Location::updateSector()
             if (nearestPoint < (height.size() - 1))
             {
                 newDist = abs(position - height[nearestPoint + 1]);
+            }
+            else
+            {
+                sector.lowerBoundary = height.size() - 2;
+                sector.upperBoundary = height.size() - 1;
+                return;
             }
         }
     }
