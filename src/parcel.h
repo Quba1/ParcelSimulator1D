@@ -29,6 +29,7 @@ public:
 
 	std::map<std::string, std::string> parcelConfiguration;
 	std::string outputFileName;
+	double noMoistureTreshold;
 
 	std::vector<double> position, velocity, pressure, temperature, temperatureVirtual, mixingRatio, mixingRatioSaturated;
 

@@ -13,11 +13,13 @@ Parcel::Parcel()
     timeDelta = 0;
     currentTimeStep = 0;
     ascentSteps = 0;
+    noMoistureTreshold = 0;
 }
 
 Parcel::Parcel(const std::map<std::string, std::string>& parcelConfiguration) :
     parcelConfiguration(parcelConfiguration),
-    outputFileName(parcelConfiguration.at("output_filename"))
+    outputFileName(parcelConfiguration.at("output_filename")),
+    noMoistureTreshold(std::stod(parcelConfiguration.at("no_moisture_trsh")))
 {
     calculateConstants();
     setupVariableFields();

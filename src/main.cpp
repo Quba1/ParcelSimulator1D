@@ -102,7 +102,7 @@ int main()
     //create instances of schemes
     std::unique_ptr<DynamicScheme> dynamicScheme;
 
-    size_t dynamicSchemeID = stoi(modelConfiguration.at("dynamic_scheme"));
+    size_t dynamicSchemeID = std::stoi(modelConfiguration.at("dynamic_scheme"));
 
     if (dynamicSchemeID == 1)
     {

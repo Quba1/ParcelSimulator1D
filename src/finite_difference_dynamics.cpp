@@ -52,7 +52,7 @@ void FiniteDifferenceDynamics::ascentAlongPseudoAdiabat()
 	double wetBulbPotentialTemp = calcWBPotentialTemperature(parcel.temperature[parcel.currentTimeStep], parcel.mixingRatio[parcel.currentTimeStep], parcel.mixingRatioSaturated[parcel.currentTimeStep], parcel.pressure[parcel.currentTimeStep]);
 
 	//loop through timesteps until point of no moisture
-	while (parcel.mixingRatio[parcel.currentTimeStep] > 0.00001 && parcel.currentTimeStep < parcel.ascentSteps)
+	while (parcel.mixingRatio[parcel.currentTimeStep] > parcel.noMoistureTreshold && parcel.currentTimeStep < parcel.ascentSteps)
 	{
 		makeTimeStep();
 
