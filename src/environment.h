@@ -27,6 +27,8 @@ public:
 		void updateSector();
 	};
 
+	static double highestPoint;
+
 	static std::vector<double> height, pressure, temperature, dewpoint;
 
 	Environment(std::string configurationFileName);

@@ -3,6 +3,7 @@
 #include "parcel.h"
 #include "pseudoadiabatic_scheme.h"
 #include "dynamic_scheme.h"
+#include <chrono>
 #include <cmath>
 #include <fstream>
 #include <iomanip>
@@ -20,6 +21,8 @@ std::map<std::string, std::string> readConfigurationFromFile(std::string filenam
     std::map<std::string, std::string> config;
     std::ifstream configFile("config/" + filename);
     std::string line;
+
+    std::cout << "Reading configuration file " << filename << "\n";
 
     //read file into a map
     while (getline(configFile, line))
@@ -58,7 +61,7 @@ void outputDataFrom(const Parcel& parcel)
 
     if (!output.is_open())
     {
-        printf("Directory ./output must exits. Please create it!\n");
+        std::cout << "Directory ./output must exits. Please create it!\n";
         return;
     }
 
@@ -114,11 +117,20 @@ int main()
     }
     else
     {
-        printf("Incorect value of dynamic_scheme in model.conf\n");
+        std::cout << "Incorect value of dynamic_scheme in model.conf\n";
         return -1;
     }
 
+    std::cout << "Starting the simulation\n";
+    auto startTime = std::chrono::high_resolution_clock::now();
+
     parcel = dynamicScheme->runSimulationOn(parcel);
+
+    auto endTime = std::chrono::high_resolution_clock::now();
+    std::cout << "Simulation finished\n";
+
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+    std::cout << std::fixed << std::setprecision(3) << "Elapsed simulation time: " << duration / 1000.0 << " ms\n";
 
     outputDataFrom(parcel);
     return 0;

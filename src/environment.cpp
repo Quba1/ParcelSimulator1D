@@ -9,6 +9,7 @@ std::vector<double> Environment::height;
 std::vector<double> Environment::pressure;
 std::vector<double> Environment::temperature;
 std::vector<double> Environment::dewpoint;
+double Environment::highestPoint;
 
 Sector::Sector()
 {
@@ -27,6 +28,8 @@ Environment::Environment(std::string configurationFileName)
     std::ifstream configurationFile(configurationFileName);
     importDataFrom(configurationFile);
     configurationFile.close();
+
+    highestPoint = height[height.size() - 1];
 }
 
 void Environment::importDataFrom(std::ifstream& file)

@@ -21,6 +21,11 @@ void FiniteDifferenceDynamics::ascentAlongMoistAdiabat()
 	double gamma = calcGamma(parcel.mixingRatio[parcel.currentTimeStep]);
 	double lambda = calcLambda(parcel.temperature[parcel.currentTimeStep], parcel.pressure[parcel.currentTimeStep], gamma);
 
+	if (!isParcelWithinBounds())
+	{
+		return;
+	}
+
 	makeFirstTimeStep();
 
 	//update parcel properties
@@ -31,6 +36,11 @@ void FiniteDifferenceDynamics::ascentAlongMoistAdiabat()
 	//loop through next timesteps
 	while (parcel.mixingRatioSaturated[parcel.currentTimeStep] > parcel.mixingRatio[parcel.currentTimeStep] && parcel.currentTimeStep < parcel.ascentSteps)
 	{
+		if (!isParcelWithinBounds())
+		{
+			return;
+		}
+
 		makeTimeStep();
 
 		//update parcel properties
@@ -54,6 +64,11 @@ void FiniteDifferenceDynamics::ascentAlongPseudoAdiabat()
 	//loop through timesteps until point of no moisture
 	while (parcel.mixingRatio[parcel.currentTimeStep] > parcel.noMoistureTreshold && parcel.currentTimeStep < parcel.ascentSteps)
 	{
+		if (!isParcelWithinBounds())
+		{
+			return;
+		}
+
 		makeTimeStep();
 
 		parcel.currentTimeStep++;
@@ -71,6 +86,11 @@ void FiniteDifferenceDynamics::ascentAlongDryAdiabat()
 
 	while (parcel.velocity[parcel.currentTimeStep] > 0 && parcel.currentTimeStep < parcel.ascentSteps)
 	{
+		if (!isParcelWithinBounds())
+		{
+			return;
+		}
+
 		makeTimeStep();
 
 		//update parcel properties
@@ -114,4 +134,25 @@ std::unique_ptr<PseudoAdiabaticScheme> FiniteDifferenceDynamics::choosePseudoAdi
 	{
 		return nullptr;
 	}
+}
+
+bool FiniteDifferenceDynamics::isParcelWithinBounds()
+{
+	if (parcel.position[parcel.currentTimeStep] >= Environment::highestPoint)
+	{
+		return false;
+	}
+	else if (parcel.position[parcel.currentTimeStep] <= 0.0)
+	{
+		return false;
+	}
+	else if (parcel.currentTimeStep >= parcel.ascentSteps - 1)
+	{
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+
 }

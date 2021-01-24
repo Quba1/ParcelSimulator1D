@@ -24,6 +24,11 @@ void RungeKuttaDynamics::ascentAlongMoistAdiabat()
 	//loop through next timesteps
 	while (parcel.mixingRatioSaturated[parcel.currentTimeStep] > parcel.mixingRatio[parcel.currentTimeStep] && parcel.currentTimeStep < parcel.ascentSteps)
 	{
+		if (!isParcelWithinBounds())
+		{
+			return;
+		}
+
 		makeAdiabaticTimeStep(lambda, gamma);
 
 		//update parcel properties
@@ -47,6 +52,11 @@ void RungeKuttaDynamics::ascentAlongPseudoAdiabat()
 	//loop through timesteps until point of no moisture
 	while (parcel.mixingRatio[parcel.currentTimeStep] > parcel.noMoistureTreshold && parcel.currentTimeStep < parcel.ascentSteps)
 	{
+		if (!isParcelWithinBounds())
+		{
+			return;
+		}
+
 		makePseudoAdiabaticTimeStep(wetBulbPotentialTemp);
 
 		parcel.currentTimeStep++;
@@ -66,6 +76,11 @@ void RungeKuttaDynamics::ascentAlongDryAdiabat()
 	//loop through next timesteps
 	while (parcel.velocity[parcel.currentTimeStep] > 0 && parcel.currentTimeStep < parcel.ascentSteps)
 	{
+		if (!isParcelWithinBounds())
+		{
+			return;
+		}
+
 		makeAdiabaticTimeStep(lambda, gamma);
 
 		//update parcel properties
@@ -179,4 +194,25 @@ std::unique_ptr<PseudoAdiabaticScheme> RungeKuttaDynamics::choosePseudoAdiabatic
 	{
 		return nullptr;
 	}
+}
+
+bool RungeKuttaDynamics::isParcelWithinBounds()
+{
+	if (parcel.position[parcel.currentTimeStep] >= Environment::highestPoint)
+	{
+		return false;
+	}
+	else if (parcel.position[parcel.currentTimeStep] <= 0.0)
+	{
+		return false;
+	}
+	else if (parcel.currentTimeStep >= parcel.ascentSteps - 1)
+	{
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+
 }

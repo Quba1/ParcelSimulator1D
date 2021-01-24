@@ -27,6 +27,8 @@ private:
 	void makeFirstTimeStep();
 	void makeTimeStep();
 
+	bool isParcelWithinBounds();
+
 public:
 	Parcel runSimulationOn(Parcel& passedParcel);
 };
@@ -44,6 +46,8 @@ private:
 
 	void makeAdiabaticTimeStep(double lambda, double gamma);
 	void makePseudoAdiabaticTimeStep(double wetBulbTemperature);
+
+	bool isParcelWithinBounds();
 
 public:
 	Parcel runSimulationOn(Parcel& passedParcel);
