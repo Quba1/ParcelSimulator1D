@@ -34,7 +34,7 @@ void FiniteDifferenceDynamics::ascentAlongMoistAdiabat()
 	parcel.updateCurrentThermodynamicsAdiabatically(lambda, gamma);
 
 	//loop through next timesteps
-	while (parcel.mixingRatioSaturated[parcel.currentTimeStep] > parcel.mixingRatio[parcel.currentTimeStep] && parcel.currentTimeStep < parcel.ascentSteps)
+	while (parcel.mixingRatioSaturated[parcel.currentTimeStep] > parcel.mixingRatio[parcel.currentTimeStep])
 	{
 		if (!isParcelWithinBounds())
 		{
@@ -62,7 +62,7 @@ void FiniteDifferenceDynamics::ascentAlongPseudoAdiabat()
 	double wetBulbPotentialTemp = calcWBPotentialTemperature(parcel.temperature[parcel.currentTimeStep], parcel.mixingRatio[parcel.currentTimeStep], parcel.mixingRatioSaturated[parcel.currentTimeStep], parcel.pressure[parcel.currentTimeStep]);
 
 	//loop through timesteps until point of no moisture
-	while (parcel.mixingRatio[parcel.currentTimeStep] > parcel.noMoistureTreshold && parcel.currentTimeStep < parcel.ascentSteps)
+	while (parcel.mixingRatio[parcel.currentTimeStep] > parcel.noMoistureTreshold && parcel.velocity[parcel.currentTimeStep] > 0)
 	{
 		if (!isParcelWithinBounds())
 		{
@@ -84,13 +84,8 @@ void FiniteDifferenceDynamics::ascentAlongDryAdiabat()
 	double gamma = C_P / C_V; //simiplified gamma for dry air
 	double lambda = calcLambda(parcel.temperature[parcel.currentTimeStep], parcel.pressure[parcel.currentTimeStep], gamma);
 
-	while (parcel.velocity[parcel.currentTimeStep] > 0 && parcel.currentTimeStep < parcel.ascentSteps)
+	while (isParcelWithinBounds())
 	{
-		if (!isParcelWithinBounds())
-		{
-			return;
-		}
-
 		makeTimeStep();
 
 		//update parcel properties

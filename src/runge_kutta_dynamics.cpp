@@ -22,7 +22,7 @@ void RungeKuttaDynamics::ascentAlongMoistAdiabat()
 	double lambda = calcLambda(parcel.temperature[parcel.currentTimeStep], parcel.pressure[parcel.currentTimeStep], gamma);
 
 	//loop through next timesteps
-	while (parcel.mixingRatioSaturated[parcel.currentTimeStep] > parcel.mixingRatio[parcel.currentTimeStep] && parcel.currentTimeStep < parcel.ascentSteps)
+	while (parcel.mixingRatioSaturated[parcel.currentTimeStep] > parcel.mixingRatio[parcel.currentTimeStep])
 	{
 		if (!isParcelWithinBounds())
 		{
@@ -50,7 +50,7 @@ void RungeKuttaDynamics::ascentAlongPseudoAdiabat()
 	double wetBulbPotentialTemp = calcWBPotentialTemperature(parcel.temperature[parcel.currentTimeStep], parcel.mixingRatio[parcel.currentTimeStep], parcel.mixingRatioSaturated[parcel.currentTimeStep], parcel.pressure[parcel.currentTimeStep]);
 
 	//loop through timesteps until point of no moisture
-	while (parcel.mixingRatio[parcel.currentTimeStep] > parcel.noMoistureTreshold && parcel.currentTimeStep < parcel.ascentSteps)
+	while (parcel.mixingRatio[parcel.currentTimeStep] > parcel.noMoistureTreshold && parcel.velocity[parcel.currentTimeStep] > 0)
 	{
 		if (!isParcelWithinBounds())
 		{
@@ -74,13 +74,8 @@ void RungeKuttaDynamics::ascentAlongDryAdiabat()
 	double lambda = calcLambda(parcel.temperature[parcel.currentTimeStep], parcel.pressure[parcel.currentTimeStep], gamma);
 
 	//loop through next timesteps
-	while (parcel.velocity[parcel.currentTimeStep] > 0 && parcel.currentTimeStep < parcel.ascentSteps)
+	while (isParcelWithinBounds())
 	{
-		if (!isParcelWithinBounds())
-		{
-			return;
-		}
-
 		makeAdiabaticTimeStep(lambda, gamma);
 
 		//update parcel properties
