@@ -56,10 +56,54 @@ double NumericalPseudoadiabat::calculateCurrentPseudoadiabaticTemperature(Parcel
 
 double FiniteDifferencePseudoadiabat::calculateCurrentPseudoadiabaticTemperature(Parcel::Slice currentParcelSlice, double deltaPressure, double WetBulbTheta)
 {
-    return 0.0;
+    double t = currentParcelSlice.temperature;
+    double rs = currentParcelSlice.mixingRatioSaturated;
+    double r = currentParcelSlice.mixingRatio;
+    double p = currentParcelSlice.pressure;
+
+    double b = (1 + (r/EPSILON)) / (1 + (r/(C_P/C_PV)));
+    double Ln = (b / p) * (((R_D * t) + (L_V * rs)) / (C_P + ((L_V * L_V * rs * EPSILON * b) / (R_D * t * t))));
+    double newTemperature = currentParcelSlice.temperature + (deltaPressure * Ln); //finite difference forward-time scheme
+
+    return newTemperature;
 }
 
 double RungeKuttaPseudoadiabat::calculateCurrentPseudoadiabaticTemperature(Parcel::Slice currentParcelSlice, double deltaPressure, double WetBulbTheta)
 {
-    return 0.0;
+    double p, t, rs, r, b;
+
+    p = currentParcelSlice.pressure;
+    t = currentParcelSlice.temperature;
+    rs = currentParcelSlice.mixingRatioSaturated;
+    r = currentParcelSlice.mixingRatio;
+    b = (1.0 + (r / EPSILON)) / (1.0 + (r / (C_P / C_PV)));
+
+    double K1 = (b / p) * (((R_D * t) + (L_V * rs)) / (C_P + ((L_V * L_V * rs * EPSILON * b) / (R_D * t * t))));
+
+    p = currentParcelSlice.pressure + (0.5 * deltaPressure);
+    t = currentParcelSlice.temperature + (0.5*K1*deltaPressure);
+    rs = calcMixingRatio(t, p);
+    r = rs;
+    b = (1.0 + (r / EPSILON)) / (1.0 + (r / (C_P / C_PV)));
+
+    double K2 = (b / p) * (((R_D * t) + (L_V * rs)) / (C_P + ((L_V * L_V * rs * EPSILON * b) / (R_D * t * t))));
+
+    p = currentParcelSlice.pressure + (0.5 * deltaPressure);
+    t = currentParcelSlice.temperature + (0.5 * K2 * deltaPressure);
+    rs = calcMixingRatio(t, p);
+    r = rs;
+    b = (1.0 + (r / EPSILON)) / (1.0 + (r / (C_P / C_PV)));
+
+    double K3 = (b / p) * (((R_D * t) + (L_V * rs)) / (C_P + ((L_V * L_V * rs * EPSILON * b) / (R_D * t * t))));
+
+    p = currentParcelSlice.pressure + deltaPressure;
+    t = currentParcelSlice.temperature + (K3 * deltaPressure);
+    rs = calcMixingRatio(t, p);
+    r = rs;
+    b = (1.0 + (r / EPSILON)) / (1.0 + (r / (C_P / C_PV)));
+
+    double K4 = (b / p) * (((R_D * t) + (L_V * rs)) / (C_P + ((L_V * L_V * rs * EPSILON * b) / (R_D * t * t))));
+
+    double newTemperature = currentParcelSlice.temperature + ((1.0 / 6.0) * deltaPressure * (K1 + 2.0 * K2 + 2.0 * K3 + K4));
+    return newTemperature;
 }

@@ -52,7 +52,7 @@ void FiniteDifferenceDynamics::ascentAlongPseudoAdiabat()
 	double wetBulbPotentialTemp = calcWBPotentialTemperature(parcel.temperature[parcel.currentTimeStep], parcel.mixingRatio[parcel.currentTimeStep], parcel.mixingRatioSaturated[parcel.currentTimeStep], parcel.pressure[parcel.currentTimeStep]);
 
 	//loop through timesteps until point of no moisture
-	while (parcel.mixingRatio[parcel.currentTimeStep] > 0.0001 && parcel.currentTimeStep < parcel.ascentSteps)
+	while (parcel.mixingRatio[parcel.currentTimeStep] > 0.00001 && parcel.currentTimeStep < parcel.ascentSteps)
 	{
 		makeTimeStep();
 
@@ -90,7 +90,7 @@ void FiniteDifferenceDynamics::makeTimeStep()
 {
 	double bouyancyForce = calcBouyancyForce(parcel.temperatureVirtual[parcel.currentTimeStep], Environment::getVirtualTemperatureAtLocation(parcel.currentLocation));
 
-	parcel.position[parcel.currentTimeStep + 1] = (parcel.timeDeltaSquared * bouyancyForce) + (2 * parcel.position[parcel.currentTimeStep]) - parcel.position[parcel.currentTimeStep - 1];
+	parcel.position[parcel.currentTimeStep + 1] = (parcel.timeDeltaSquared * bouyancyForce) + (2.0 * parcel.position[parcel.currentTimeStep]) - parcel.position[parcel.currentTimeStep - 1];
 	parcel.velocity[parcel.currentTimeStep + 1] = (parcel.position[parcel.currentTimeStep + 1] - parcel.position[parcel.currentTimeStep]) / parcel.timeDelta;
 }
 

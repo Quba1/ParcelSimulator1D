@@ -45,7 +45,7 @@ void RungeKuttaDynamics::ascentAlongPseudoAdiabat()
 	double wetBulbPotentialTemp = calcWBPotentialTemperature(parcel.temperature[parcel.currentTimeStep], parcel.mixingRatio[parcel.currentTimeStep], parcel.mixingRatioSaturated[parcel.currentTimeStep], parcel.pressure[parcel.currentTimeStep]);
 
 	//loop through timesteps until point of no moisture
-	while (parcel.mixingRatio[parcel.currentTimeStep] > 0.0001 && parcel.currentTimeStep < parcel.ascentSteps)
+	while (parcel.mixingRatio[parcel.currentTimeStep] > 0.00001 && parcel.currentTimeStep < parcel.ascentSteps)
 	{
 		makePseudoAdiabaticTimeStep(wetBulbPotentialTemp);
 
@@ -155,8 +155,8 @@ void RungeKuttaDynamics::makePseudoAdiabaticTimeStep(double wetBulbTemperature)
 	stepTemperatureVirtual = calcVirtualTemperature(stepTemperature, stepMixingRatio);
 	double K3 = calcBouyancyForce(stepTemperatureVirtual, Environment::getVirtualTemperatureAtLocation(stepLocation));
 
-	parcel.position[parcel.currentTimeStep + 1] = parcel.position[parcel.currentTimeStep] + ((parcel.timeDelta / 6.0) * (C0 + 2 * C1 + 2 * C2 + C3));
-	parcel.velocity[parcel.currentTimeStep + 1] = parcel.velocity[parcel.currentTimeStep] + ((parcel.timeDelta / 6.0) * (K0 + 2 * K1 + 2 * K2 + K3));
+	parcel.position[parcel.currentTimeStep + 1] = parcel.position[parcel.currentTimeStep] + ((parcel.timeDelta / 6.0) * (C0 + 2.0 * C1 + 2.0 * C2 + C3));
+	parcel.velocity[parcel.currentTimeStep + 1] = parcel.velocity[parcel.currentTimeStep] + ((parcel.timeDelta / 6.0) * (K0 + 2.0 * K1 + 2.0 * K2 + K3));
 }
 
 std::unique_ptr<PseudoAdiabaticScheme> RungeKuttaDynamics::choosePseudoAdiabaticScheme()
