@@ -8,9 +8,13 @@ Parcel FiniteDifferenceDynamics::runSimulationOn(Parcel& passedParcel)
 {
 	parcel = passedParcel;
 
-	ascentAlongMoistAdiabat();
-	ascentAlongPseudoAdiabat();
-	ascentAlongDryAdiabat();
+	startFromInitialConditions();
+
+	while (isParcelWithinBounds())
+	{
+		ascentAlongMoistAdiabat();
+		ascentAlongPseudoAdiabat();
+	}
 
 	return parcel;
 }
@@ -21,20 +25,8 @@ void FiniteDifferenceDynamics::ascentAlongMoistAdiabat()
 	double gamma = calcGamma(parcel.mixingRatio[parcel.currentTimeStep]);
 	double lambda = calcLambda(parcel.temperature[parcel.currentTimeStep], parcel.pressure[parcel.currentTimeStep], gamma);
 
-	if (!isParcelWithinBounds())
-	{
-		return;
-	}
-
-	makeFirstTimeStep();
-
-	//update parcel properties
-	parcel.currentTimeStep++;
-	parcel.updateCurrentDynamicsAndPressure();
-	parcel.updateCurrentThermodynamicsAdiabatically(lambda, gamma);
-
 	//loop through next timesteps
-	while (parcel.mixingRatioSaturated[parcel.currentTimeStep] > parcel.mixingRatio[parcel.currentTimeStep])
+	do
 	{
 		if (!isParcelWithinBounds())
 		{
@@ -47,7 +39,7 @@ void FiniteDifferenceDynamics::ascentAlongMoistAdiabat()
 		parcel.currentTimeStep++;
 		parcel.updateCurrentDynamicsAndPressure();
 		parcel.updateCurrentThermodynamicsAdiabatically(lambda, gamma);
-	}
+	} while (parcel.mixingRatioSaturated[parcel.currentTimeStep] > parcel.mixingRatio[parcel.currentTimeStep]);
 
 	//equalise mixing ratio and saturation mixing ratio at the end of adiabatic ascent
 	parcel.mixingRatio[parcel.currentTimeStep] = parcel.mixingRatioSaturated[parcel.currentTimeStep];
@@ -79,20 +71,22 @@ void FiniteDifferenceDynamics::ascentAlongPseudoAdiabat()
 	}
 }
 
-void FiniteDifferenceDynamics::ascentAlongDryAdiabat()
+void FiniteDifferenceDynamics::startFromInitialConditions()
 {
-	double gamma = C_P / C_V; //simiplified gamma for dry air
+	double gamma = calcGamma(parcel.mixingRatio[parcel.currentTimeStep]);
 	double lambda = calcLambda(parcel.temperature[parcel.currentTimeStep], parcel.pressure[parcel.currentTimeStep], gamma);
 
-	while (isParcelWithinBounds())
+	if (!isParcelWithinBounds())
 	{
-		makeTimeStep();
-
-		//update parcel properties
-		parcel.currentTimeStep++;
-		parcel.updateCurrentDynamicsAndPressure();
-		parcel.updateCurrentThermodynamicsAdiabatically(lambda, gamma);
+		return;
 	}
+
+	makeFirstTimeStep();
+
+	//update parcel properties
+	parcel.currentTimeStep++;
+	parcel.updateCurrentDynamicsAndPressure();
+	parcel.updateCurrentThermodynamicsAdiabatically(lambda, gamma);
 }
 
 void FiniteDifferenceDynamics::makeFirstTimeStep()

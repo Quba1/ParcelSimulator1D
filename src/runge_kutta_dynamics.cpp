@@ -3,14 +3,17 @@
 #include "parcel.h"
 #include "dynamic_scheme.h"
 #include "pseudoadiabatic_scheme.h"
+#include <iostream>
 
 Parcel RungeKuttaDynamics::runSimulationOn(Parcel& passedParcel)
 {
 	parcel = passedParcel;
 
-	ascentAlongMoistAdiabat();
-	ascentAlongPseudoAdiabat();
-	ascentAlongDryAdiabat();
+	while (isParcelWithinBounds())
+	{
+		ascentAlongMoistAdiabat();
+		ascentAlongPseudoAdiabat();
+	}
 
 	return parcel;
 }
@@ -22,7 +25,7 @@ void RungeKuttaDynamics::ascentAlongMoistAdiabat()
 	double lambda = calcLambda(parcel.temperature[parcel.currentTimeStep], parcel.pressure[parcel.currentTimeStep], gamma);
 
 	//loop through next timesteps
-	while (parcel.mixingRatioSaturated[parcel.currentTimeStep] > parcel.mixingRatio[parcel.currentTimeStep])
+	do
 	{
 		if (!isParcelWithinBounds())
 		{
@@ -35,7 +38,7 @@ void RungeKuttaDynamics::ascentAlongMoistAdiabat()
 		parcel.currentTimeStep++;
 		parcel.updateCurrentDynamicsAndPressure();
 		parcel.updateCurrentThermodynamicsAdiabatically(lambda, gamma);
-	}
+	} while (parcel.mixingRatioSaturated[parcel.currentTimeStep] > parcel.mixingRatio[parcel.currentTimeStep]);
 
 	//equalise mixing ratio and saturation mixing ratio at the end of adiabatic ascent
 	parcel.mixingRatio[parcel.currentTimeStep] = parcel.mixingRatioSaturated[parcel.currentTimeStep];
@@ -64,24 +67,6 @@ void RungeKuttaDynamics::ascentAlongPseudoAdiabat()
 		double pressureDelta = parcel.pressure[parcel.currentTimeStep] - parcel.pressure[parcel.currentTimeStep - 1];
 		parcel.temperature[parcel.currentTimeStep] = pseudoadiabaticScheme->calculateCurrentPseudoadiabaticTemperature(parcel.getSlice(-1), pressureDelta, wetBulbPotentialTemp);
 		parcel.updateCurrentThermodynamicsPseudoadiabatically();
-	}
-}
-
-void RungeKuttaDynamics::ascentAlongDryAdiabat()
-{
-	//calculate ascent constants
-	double gamma = C_P / C_V; //simiplified gamma for dry air
-	double lambda = calcLambda(parcel.temperature[parcel.currentTimeStep], parcel.pressure[parcel.currentTimeStep], gamma);
-
-	//loop through next timesteps
-	while (isParcelWithinBounds())
-	{
-		makeAdiabaticTimeStep(lambda, gamma);
-
-		//update parcel properties
-		parcel.currentTimeStep++;
-		parcel.updateCurrentDynamicsAndPressure();
-		parcel.updateCurrentThermodynamicsAdiabatically(lambda, gamma);
 	}
 }
 

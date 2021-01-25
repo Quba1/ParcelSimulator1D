@@ -22,7 +22,7 @@ private:
 
 	void ascentAlongMoistAdiabat();
 	void ascentAlongPseudoAdiabat();
-	void ascentAlongDryAdiabat();
+	void startFromInitialConditions();
 
 	void makeFirstTimeStep();
 	void makeTimeStep();
@@ -42,7 +42,6 @@ private:
 
 	void ascentAlongMoistAdiabat();
 	void ascentAlongPseudoAdiabat();
-	void ascentAlongDryAdiabat();
 
 	void makeAdiabaticTimeStep(double lambda, double gamma);
 	void makePseudoAdiabaticTimeStep(double wetBulbTemperature);
