@@ -96,8 +96,8 @@ void RungeKuttaDynamics::makeAdiabaticTimeStep(double lambda, double gamma)
 	stepTemperatureVirtual = calcVirtualTemperature(stepTemperature, parcel.mixingRatio[parcel.currentTimeStep]);
 	double K2 = calcBouyancyForce(stepTemperatureVirtual, Environment::getVirtualTemperatureAtLocation(stepLocation));
 
-	double C3 = C0 + (0.5 * parcel.timeDelta * K2);
-	stepLocation.position = parcel.currentLocation.position + (0.5 * parcel.timeDelta * C2);
+	double C3 = C0 + (parcel.timeDelta * K2);
+	stepLocation.position = parcel.currentLocation.position + (parcel.timeDelta * C2);
 	stepLocation.updateSector();
 	stepPressure = Environment::getPressureAtLocation(stepLocation);
 	stepTemperature = calcTemperatureInAdiabat(stepPressure, gamma, lambda);
@@ -140,8 +140,8 @@ void RungeKuttaDynamics::makePseudoAdiabaticTimeStep(double wetBulbTemperature)
 	stepTemperatureVirtual = calcVirtualTemperature(stepTemperature, stepMixingRatio);
 	double K2 = calcBouyancyForce(stepTemperatureVirtual, Environment::getVirtualTemperatureAtLocation(stepLocation));
 
-	double C3 = C0 + (0.5 * parcel.timeDelta * K2);
-	stepLocation.position = parcel.currentLocation.position + (0.5 * parcel.timeDelta * C2);
+	double C3 = C0 + (parcel.timeDelta * K2);
+	stepLocation.position = parcel.currentLocation.position + (parcel.timeDelta * C2);
 	stepLocation.updateSector();
 	stepPressure = Environment::getPressureAtLocation(stepLocation);
 	deltaPressure = stepPressure - stepSlice.pressure;
