@@ -19,6 +19,8 @@ double const L_V = 2500800.0; //J kg^1 latent heat of vapourization of water (EC
 double const EPSILON = M_V / M_D; //ratio of molar masses of dry air and water vapour
 double const R_D = R / M_D; //specific gas constant for dry air
 
+double calcVapourPressure(double temperature, double pressure);
+
 double calcMixingRatio(double temperature, double pressure);
 
 double calcVirtualTemperature(double temperature, double mixRatio);
