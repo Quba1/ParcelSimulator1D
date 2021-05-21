@@ -11,6 +11,9 @@ class DynamicScheme
 {
 public:
 	virtual Parcel runSimulationOn(Parcel& passedParcel) = 0;
+
+	//default virtual destructor (for ASan)
+	virtual ~DynamicScheme() = default;
 };
 
 class FiniteDifferenceDynamics : public DynamicScheme
